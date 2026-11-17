@@ -1,0 +1,29 @@
+# Ambiente de estudos - Aula 0 (intencao: versoes minimas).
+# A trava exata e gerada em requirements.lock.txt pelo 02_setup_python.ps1.
+# Tudo aqui tem wheel para Windows x64 / Python 3.12: nada compila localmente.
+
+# Nucleo de bioinformatica
+biopython>=1.86
+
+# Computacao vetorizada e dados colunares
+numpy>=2.1
+pandas>=2.2
+pyarrow>=18.0
+duckdb>=1.2
+
+# Visualizacao
+matplotlib>=3.9
+
+# Notebooks no VS Code e engine jupyter do Quarto
+ipykernel>=6.29
+jupyter>=1.1
+
+# Utilitarios
+python-dotenv>=1.0
+psutil>=6.0
+requests>=2.32
+tqdm>=4.66
+
+# Qualidade de codigo
+pytest>=8.3
+ruff>=0.8

@@ -1,0 +1,124 @@
+# =============================================================================
+# .gitignore - bioinformatica-vegetal-sdm
+# Regra geral: versionar codigo, notas, travas de ambiente e configuracao do
+# editor; nunca versionar ambientes, segredos, dados ou saidas regeneraveis.
+# =============================================================================
+
+# --- Segredos e configuracao local (gerados pelo setup da Aula 0) -------------
+.env
+.env.*
+!.env.example
+.Renviron
+.httr-oauth
+.secrets/
+
+# --- Python -------------------------------------------------------------------
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+.tmp/
+
+# --- R ------------------------------------------------------------------------
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+*.Rcheck/
+# O renv gera o proprio renv/.gitignore (library, local, cellar, lock, python,
+# sandbox, staging). As linhas abaixo sao redundancia segura.
+# renv.lock, renv/activate.R e renv/settings.json DEVEM ser versionados.
+renv/library/
+renv/local/
+renv/cellar/
+renv/lock/
+renv/python/
+renv/sandbox/
+renv/staging/
+
+# --- Quarto -------------------------------------------------------------------
+# _book/ e a saida renderizada (publicada via gh-pages, fora da branch main).
+# _freeze/ DEVE ser versionado: guarda os resultados e evita reexecutar tudo.
+_book/
+.quarto/
+*.knit.md
+*.utf8.md
+*_cache/
+
+# --- Dados: vivem em 03_dados (BIOINFO_DADOS) ou ./dados, nunca no git -----------
+dados/
+# rasters e cubos
+*.tif
+*.tiff
+*.nc
+*.grd
+*.gri
+*.vrt
+*.asc
+# vetores
+*.gpkg
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+# tabulares grandes
+*.parquet
+*.feather
+*.duckdb
+*.duckdb.wal
+# sequencias, alinhamentos e saidas de ferramentas de bioinformatica
+*.fasta
+*.fa
+*.fna
+*.faa
+*.gb
+*.gbk
+*.gff
+*.gff3
+*.fastq
+*.fq
+*.bam
+*.sam
+*.vcf
+*.gz
+*.zip
+*.ckp.gz
+# bancos BLAST de nucleotideos (makeblastdb)
+*.nhr
+*.nin
+*.nsq
+*.nhd
+*.nhi
+*.nog
+*.nos
+*.njs
+*.ndb
+*.not
+*.ntf
+*.nto
+# excecao: amostras minusculas usadas nos testes automatizados
+!tests/fixtures/**
+
+# --- Logs ---------------------------------------------------------------------
+*.log
+
+# --- Editor (versionar so a configuracao compartilhada) --------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+
+# --- Sistema ------------------------------------------------------------------
+Thumbs.db
+desktop.ini
+.DS_Store

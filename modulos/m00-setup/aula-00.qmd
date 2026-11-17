@@ -1,0 +1,143 @@
+---
+title: "Aula 0 - Ambiente reprodutível em 8 GB de RAM"
+description: "Por que e como isolar ambientes, travar versões e impor tetos de memória e threads antes da primeira linha de bioinformática ou SDM."
+date: 2026-11-12
+categories: [setup, reprodutibilidade, engenharia]
+---
+
+## Objetivos da aula
+
+Ao final desta aula o ambiente deve:
+
+- rodar Python e R isolados do sistema, com versões travadas em arquivo;
+- impor, por código e não por disciplina, um teto de threads (4) e de memória;
+- permitir que R e Python coexistam no mesmo documento Quarto;
+- passar nos testes de fumaça `scripts/smoke_test.py` e `scripts/smoke_test.R`.
+
+## Fundamentação: por que o ambiente é parte do método
+
+Um resultado de SDM ou uma filogenia é função dos dados, do algoritmo **e** das
+versões do software. Uma mudança de versão do `maxnet`, do `terra` ou do
+alinhador pode alterar previsões e topologias sem nenhum erro visível.
+Por isso o ambiente é tratado como artefato científico, em três camadas:
+
+| Camada | Python | R | O que garante |
+|---|---|---|---|
+| Isolamento | `.venv` | biblioteca do projeto (`renv/library`) | o projeto não depende do que está instalado no sistema |
+| Intenção | `requirements/base.txt` | lista em `R/01_instalar_pacotes.R` | quais pacotes e versões mínimas o projeto exige |
+| Trava | `requirements.lock.txt` | `renv.lock` | a versão exata de cada pacote, inclusive dependências |
+
+O `renv` mantém um **cache global** e liga cada biblioteca de projeto a ele; por
+isso dezenas de projetos R custam pouco disco. O `venv` não tem esse mecanismo:
+cada ambiente Python ocupa algumas centenas de MB.
+
+## Fundamentação: o modelo de memória que vamos respeitar
+
+A máquina tem 7,73 GB utilizáveis, dos quais o Windows, o VS Code e o navegador
+consomem de 2,5 a 3,5 GB. Sobram de 4 a 5 GB por processo de análise. Três fatos
+técnicos determinam as regras de engenharia da trilha.
+
+**1. Raster global não cabe em memória.** Uma camada WorldClim de 30 segundos de
+arco tem 43.200 × 21.600 células. Em `float32`:
+
+```{r}
+#| label: conta-worldclim
+#| echo: true
+celulas <- 43200 * 21600
+gb_por_camada <- celulas * 4 / 1024^3
+c(gb_por_camada = round(gb_por_camada, 2),
+  gb_19_bioclim = round(19 * gb_por_camada, 1))
+```
+
+As 19 variáveis bioclimáticas globais somariam mais de 60 GB. O `terra` resolve
+isso lendo em blocos do disco e gravando resultados intermediários em arquivos
+temporários; nosso papel é recortar para a área de estudo **antes** de extrair
+tabelas e limitar a fração de RAM que ele pode usar.
+
+**2. No Windows, paralelismo multiplica memória.** Não existe `fork`. Um cluster
+PSOCK do R ou um `multiprocessing` com *spawn* no Python sobe processos novos que
+reimportam pacotes e recebem cópias dos dados. Quatro workers com 1 GB de dados
+cada são 4 GB além da sessão principal.
+
+**3. Bibliotecas numéricas criam threads por conta própria.** O BLAS do NumPy e o
+OpenMP usam, por padrão, todos os 12 threads lógicos do i5-1235U. Isso disputa CPU
+com o próprio paralelismo explícito e aumenta a memória de trabalho.
+
+## Como as regras viraram código
+
+| Regra | Mecanismo | Onde está |
+|---|---|---|
+| Teto de 4 threads | variáveis `OMP_NUM_THREADS`, `OPENBLAS_NUM_THREADS`, `MKL_NUM_THREADS` | `.env`, `.Renviron` e `bioflora.recursos.aplicar_limites_threads()` |
+| `terra` com no máximo 4 GB e metade da RAM livre | `terraOptions(memfrac = 0.5, memmax = 4)` registrado nos eventos `onLoad` e `attach` do pacote via `setHook(packageEvent(...))` | bloco no `.Rprofile` |
+| Temporários do `terra` em pasta descartável | `terraOptions(tempdir = BIOINFO_TMP_TERRA)` + `terra::tmpFiles(remove = TRUE)` | `.Rprofile` e `05_scratch/tmp_terra` |
+| DuckDB com teto e spill em disco | `memory_limit`, `threads`, `temp_directory`, `preserve_insertion_order = false` | `bioflora.recursos.conectar_duckdb()` |
+| Alarme de RAM | RSS do processo contra teto de 4,5 GB | `bioflora.recursos.log_memoria()` |
+| Editor leve | Pylance sem indexação global; pastas de dados fora do *file watcher* | `.vscode/settings.json` |
+
+::: {.callout-note}
+## Por que dois ganchos para o `terra`
+
+O `terra` recria suas opções internas no `.onAttach`, que o R executa **depois** dos
+ganchos de `onLoad`. Um gancho só em `onLoad` é silenciosamente desfeito por
+`library(terra)`. Registrar a mesma função também no evento `attach` reaplica os
+limites depois do `.onAttach`; o `onLoad` continua cobrindo o uso apenas com
+`terra::funcao()`. Esse comportamento foi verificado empiricamente no teste de
+fumaça, que confere `memmax` e `tempdir` depois de carregar o pacote.
+:::
+
+::: {.callout-important}
+## Ordem de importação no Python
+
+`import bioflora` deve vir **antes** de `import numpy` em scripts pesados. O BLAS lê
+as variáveis de threads no momento em que é carregado; depois disso, mudar
+`os.environ` não tem efeito.
+:::
+
+## Verificação: R e Python no mesmo documento
+
+O bloco R confirma que o `renv` está ativo e que o gancho do `terra` funcionou.
+
+```{r}
+#| label: verifica-r
+library(terra)
+opt <- terraOptions(print = FALSE)
+data.frame(
+  item  = c("R", "biblioteca ativa", "terra memmax (GB)", "terra memfrac", "terra tempdir"),
+  valor = c(R.version.string, .libPaths()[1], opt$memmax, opt$memfrac, opt$tempdir)
+)
+```
+
+O bloco Python roda pelo `reticulate`, usando o interpretador do `.venv` definido
+em `RETICULATE_PYTHON`.
+
+```{python}
+#| label: verifica-python
+#| error: true
+import sys
+
+import bioflora
+from Bio.Seq import Seq
+
+trecho = Seq("ATGTCACCACAAACAGAGACTAAAGCA")
+print("Python:", sys.executable)
+print("bioflora:", bioflora.__version__)
+print("Tradução (tabela 11):", trecho.translate(table=11))
+```
+
+## Exercícios de fixação
+
+1. Calcule a memória, em GB, de um recorte das 19 variáveis bioclimáticas de 30
+   segundos de arco para Minas Gerais (cerca de 11,3° × 8,8°). Cabe com folga no
+   teto de 4 GB?
+2. Explique por que `terra::predict(..., cores = 4)` pode ser mais lento **e** mais
+   caro em memória do que `cores = 1` com `filename =` em disco, no Windows.
+3. Em um script, importe `numpy` antes de `bioflora` e observe a mensagem
+   `[AVISO]`. Por que o teto de threads pode não valer nessa sessão?
+
+## Checklist de saída
+
+- [ ] `python scripts/smoke_test.py` termina com `[OK] ambiente Python pronto`
+- [ ] `python -m pytest` passa
+- [ ] `Rscript scripts/smoke_test.R` termina com `[OK] ambiente R pronto`
+- [ ] `quarto render modulos/m00-setup/aula-00.qmd` gera o HTML desta nota
+- [ ] `NCBI_EMAIL` preenchido no `.env`

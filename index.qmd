@@ -1,0 +1,24 @@
+# Apresentação {.unnumbered}
+
+Esta apostila acompanha uma trilha de estudos de nível de pós-graduação que integra
+dois pilares:
+
+1. **Bioinformática e genômica comparativa vegetal com Python**: sequências,
+   alinhamento, DNA barcoding, filogenética e plastomas de espécies arbóreas nativas.
+2. **Modelagem de distribuição de espécies (SDM/ENM) com R**: dados de ocorrência,
+   viés amostral, algoritmos de nicho, validação espacial, ensembles e projeções
+   climáticas CMIP6.
+
+Cada capítulo é uma nota de aula: fundamentação teórica (o porquê biológico,
+matemático e estatístico), laboratório prático reprodutível e exercícios de fixação.
+Todo o código foi escrito para rodar em um notebook com 8 GB de RAM e sem GPU.
+
+## Como reproduzir {.unnumbered}
+
+O ambiente é descrito por `requirements.lock.txt` (Python) e `renv.lock` (R).
+A configuração completa está no capítulo da Aula 0.
+
+```powershell
+# a partir de 01_estudos
+quarto render
+```

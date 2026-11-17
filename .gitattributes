@@ -1,0 +1,19 @@
+# Fim de linha: LF no repositorio e na copia de trabalho, inclusive no Windows
+# (o VS Code ja esta configurado com files.eol = "\n").
+* text=auto eol=lf
+
+# Binarios: nunca converter
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.pdf  binary
+*.ico  binary
+*.woff binary
+*.woff2 binary
+
+# Estatisticas de linguagem do GitHub: nao contar arquivos gerados ou de terceiros
+renv/activate.R     linguist-vendored
+_freeze/**          linguist-generated
+renv.lock           linguist-generated
+requirements.lock.txt linguist-generated

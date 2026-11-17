@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "Se usar este material, por favor cite-o como abaixo."
+title: "Bioinformática Vegetal e Modelagem de Distribuição de Espécies: apostila e laboratório reprodutível"
+abstract: >-
+  Apostila aberta e laboratório reprodutível que integram genômica comparativa
+  vegetal em Python (Biopython) e modelagem de distribuição de espécies em R
+  (terra, sf, renv), aplicadas a espécies arbóreas nativas do Brasil.
+type: software
+authors:
+  - given-names: Pedro Luiz
+    family-names: Rodrigues Vaz de Melo
+version: 0.1.0
+date-released: "2026-11-17"
+license: MIT
+repository-code: "https://github.com/PedroLuizskt/bioinformatica-vegetal-sdm"
+url: "https://pedroluizskt.github.io/bioinformatica-vegetal-sdm/"
+keywords:
+  - bioinformatics
+  - species distribution modeling
+  - ecological niche modeling
+  - plant genomics
+  - DNA barcoding
+  - phylogenetics
+  - Brazilian flora
+  - reproducible research

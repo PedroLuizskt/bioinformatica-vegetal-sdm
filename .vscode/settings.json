@@ -1,0 +1,60 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  "python.terminal.activateEnvironment": true,
+  "python.envFile": "${workspaceFolder}/.env",
+  "python.analysis.diagnosticMode": "openFilesOnly",
+  "python.analysis.indexing": false,
+  "python.analysis.exclude": [
+    "**/.venv",
+    "**/renv",
+    "**/_book",
+    "**/_freeze",
+    "**/.quarto"
+  ],
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestArgs": ["tests"],
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true
+  },
+  "jupyter.notebookFileRoot": "${workspaceFolder}",
+
+  "r.plot.useHttpgd": true,
+  "r.sessionWatcher": true,
+  "r.bracketedPaste": true,
+  "r.lsp.enabled": true,
+  "r.lsp.diagnostics": true,
+
+  "quarto.render.renderOnSave": false,
+
+  "files.encoding": "utf8",
+  "files.eol": "\n",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.watcherExclude": {
+    "**/.venv/**": true,
+    "**/renv/library/**": true,
+    "**/renv/staging/**": true,
+    "**/_book/**": true,
+    "**/_freeze/**": true,
+    "**/.quarto/**": true,
+    "**/.tmp/**": true,
+    "**/dados/**": true
+  },
+  "search.exclude": {
+    "**/.venv": true,
+    "**/renv/library": true,
+    "**/_book": true,
+    "**/_freeze": true,
+    "**/dados": true
+  },
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.ruff_cache": true
+  },
+
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "editor.rulers": [88]
+}

@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bioflora"
+version = "0.1.0"
+description = "Pacote didatico da trilha de Bioinformatica Vegetal (Python) + SDM (R)"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Pedro Luiz Rodrigues Vaz de Melo" }]
+license = "MIT"
+# Dependencias ficam em requirements/base.txt (intencao) e
+# requirements.lock.txt (trava exata); aqui so o pacote em si.
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+src = ["src"]
+extend-exclude = ["renv", "_book", "_freeze"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]

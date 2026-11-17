@@ -1,0 +1,8 @@
+# Camada geoespacial - NAO instalar na Aula 0.
+# Entra no Modulo 6 (PD/PE por celula H3) e no capstone:
+#   python -m pip install -r requirements/geo.txt
+geopandas>=1.0
+shapely>=2.0
+rasterio>=1.4
+rioxarray>=0.17
+h3>=4.1

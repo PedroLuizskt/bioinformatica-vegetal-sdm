@@ -1,0 +1,38 @@
+project:
+  type: book
+  output-dir: _book
+  # R e Python executam a partir da raiz do projeto, onde estao .Rprofile,
+  # .Renviron (renv + limites) e o .venv
+  execute-dir: project
+
+book:
+  title: "Bioinformática Vegetal e Modelagem de Distribuição de Espécies"
+  subtitle: "Apostila da trilha de estudos: Python (genômica comparativa) + R (SDM/ENM)"
+  author: "Pedro Luiz Rodrigues Vaz de Melo"
+  date: last-modified
+  site-url: https://pedroluizskt.github.io/bioinformatica-vegetal-sdm/
+  repo-url: https://github.com/PedroLuizskt/bioinformatica-vegetal-sdm
+  repo-branch: main
+  repo-actions: [source, issue]
+  chapters:
+    - index.qmd
+    - part: "Módulo 0 - Setup e arquitetura"
+      chapters:
+        - modulos/m00-setup/aula-00.qmd
+
+lang: pt-BR
+bibliography: referencias/referencias.bib
+
+execute:
+  # freeze: reexecuta apenas o que mudou; a pasta _freeze/ vai para o git
+  freeze: auto
+  warning: false
+  message: false
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    number-sections: true
+    code-copy: true
+    code-overflow: wrap
