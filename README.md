@@ -22,8 +22,8 @@ sequência de DNA, linhagem evolutiva e paisagem — e usar isso para conservaç
 
 | Módulo | Tema | Python | R | Status |
 |---|---|---|---|---|
-| M0 | Setup e arquitetura | `venv`, pacote `bioflora`, Entrez | `renv`, limites de RAM no `terra` | concluído |
-| M1 | Sequências e ocorrências como dados | `SeqIO`, plastomas, k-mers | GBIF, `florabr`, `CoordinateCleaner` | próximo |
+| M0 | Setup e arquitetura | `venv`, pacote `bioflora`, Entrez | `renv`, limites de RAM no `terra` | concluído (v0.1.0) |
+| M1 | Sequências e ocorrências como dados | `SeqIO`, plastomas, k-mers | GBIF, `florabr`, `CoordinateCleaner` | em andamento |
 | M2 | Alinhamento e espaço ambiental | Needleman–Wunsch, Smith–Waterman, BLAST+ | WorldClim, área M, colinearidade | planejado |
 | M3 | Barcoding e algoritmos de nicho | MAFFT, barcode gap | `maxnet`, GAM, Random Forest | planejado |
 | M4 | Filogenética e validação | Neighbor-Joining, Felsenstein, IQ-TREE 3 | `blockCV`, `ENMeval`, Boyce | planejado |

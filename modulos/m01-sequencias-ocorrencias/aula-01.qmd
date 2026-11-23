@@ -1,0 +1,378 @@
+---
+title: "Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez"
+description: "Um genoma de cloroplasto de araucária, do NCBI ao Parquet, com cache, proveniência e validação das proteínas anotadas."
+date: 2026-11-17
+categories: [M1, biopython, ncbi, plastoma, araucaria]
+engine: knitr
+---
+
+```{r}
+#| label: setup-r
+#| include: false
+library(reticulate)
+```
+
+```{python}
+#| label: setup-py
+#| include: false
+import bioflora  # primeiro: teto de threads do BLAS
+import pandas as pd
+from Bio import SeqIO
+from Bio.Data import CodonTable
+
+from bioflora.config import dir_dados
+from bioflora.ncbi import caminho_cache, ler_proveniencia
+from bioflora.sequencias import (
+    coordenadas_genbank,
+    features_para_dataframe,
+    gc_janela,
+    genes_repetidos,
+    resumo_registro,
+    validar_cds,
+)
+
+ACC = "KY404932.1"
+ARQ_GB = caminho_cache(ACC)
+if not ARQ_GB.exists():
+    raise FileNotFoundError(
+        f"{ARQ_GB} nao existe. Rode antes: python scripts/m01_s01_plastoma.py"
+    )
+record = SeqIO.read(ARQ_GB, "genbank")
+feats = features_para_dataframe(record)
+val = validar_cds(record)
+
+
+def tabela(df: pd.DataFrame) -> None:
+    """Imprime um DataFrame como tabela HTML (sem dependencias extras)."""
+    print(df.to_html(index=False, border=0, classes="table table-sm", na_rep="-"))
+```
+
+## Objetivos
+
+Ao final desta aula você deve saber:
+
+- tratar uma sequência como objeto matemático e manipular `Seq`, `SeqRecord` e `SeqFeature`;
+- converter coordenadas do GenBank (base 1, fechado) para Python (base 0, semiaberto) sem errar por um;
+- explicar por que traduzir o DNA de um plastídio não reproduz, necessariamente, a proteína anotada;
+- consultar o NCBI pelo Entrez com identificação, servidor de histórico, cache e proveniência;
+- transformar um registro GenBank em tabelas Parquet prontas para análise.
+
+## Por que começar pelo plastoma
+
+O genoma do cloroplasto é o genoma de trabalho da sistemática e da filogeografia vegetal:
+herança uniparental, praticamente sem recombinação, centenas de cópias por célula e genes
+muito conservados. Os marcadores centrais do DNA barcoding de plantas, *rbcL* e *matK*,
+estão nele [@cbol2009barcode]. Na maioria das plantas terrestres o plastoma tem
+120–160 kb e uma estrutura quadripartida: uma região grande de cópia única (LSC), uma
+pequena (SSC) e duas repetições invertidas (IRa e IRb) que as separam.
+
+::: {.callout-important}
+## A araucária quebra a regra de livro
+
+Coníferas perderam uma das cópias da repetição invertida, e Pinaceae e as demais coníferas
+(cupressófitas, que incluem Araucariaceae) perderam cópias diferentes [@wu2011conifer].
+No plastoma de *Araucaria angustifolia*, a organização LSC/SSC/IRa/IRb não está presente
+e os genes que ficariam na IR aparecem em cópia única, com exceção de *rrn5* e
+*trnI-CAU* [@brandao2019araucaria]. Começar por uma exceção é proposital: ela obriga a
+medir em vez de presumir. Na Sessão 2 vamos detectar repetições invertidas por
+algoritmo e comparar a araucária com um ipê, que tem a estrutura canônica.
+:::
+
+## A sequência como objeto matemático
+
+Uma molécula de DNA de fita simples, lida de 5' para 3', é uma palavra sobre o alfabeto
+$\Sigma = \{A, C, G, T\}$, isto é, $s = s_1 s_2 \dots s_n \in \Sigma^n$. Dados reais usam
+também os códigos de ambiguidade da IUPAC (`N` para qualquer base, `R` para A/G etc.).
+
+A fita complementar é obtida pela função de complemento $c$, com $c(A)=T$, $c(C)=G$ e vice-versa.
+Como as fitas são antiparalelas, a sequência da fita oposta, lida também de 5' para 3', é o
+**complemento reverso**:
+
+$$
+\mathrm{rc}(s)_i = c\left(s_{n+1-i}\right), \qquad i = 1, \dots, n.
+$$
+
+$\mathrm{rc}$ é uma involução: $\mathrm{rc}(\mathrm{rc}(s)) = s$. É isso que o atributo
+`strand` codifica: um gene na fita $-1$ é lido aplicando $\mathrm{rc}$ ao trecho da fita
+$+1$ que o GenBank armazena. Em Biopython, `Seq` guarda a sequência como bytes,
+`SeqRecord` adiciona identificador, anotações e a lista de `SeqFeature`, e cada
+`SeqFeature` tem um tipo (`CDS`, `tRNA`...), qualificadores (`/gene`, `/product`...) e uma
+localização.
+
+## Coordenadas: o erro de um que todo bioinformata comete
+
+O GenBank numera a partir de 1 e usa intervalos **fechados**; Python numera a partir de 0
+e usa intervalos **semiabertos**. A mesma região é escrita assim nos dois sistemas:
+
+$$
+[a\,..\,b]_{\text{GenBank}} \;=\; [\,a-1,\; b\,)_{\text{Python}}, \qquad
+\text{comprimento} = b - a + 1 = \text{end} - \text{start}.
+$$
+
+O intervalo semiaberto não é capricho: o comprimento é a diferença direta das pontas, e
+$[i, j) \cup [j, k) = [i, k)$ sem sobreposição, o que elimina uma classe inteira de erros ao
+fatiar e concatenar. Localizações compostas (`join(...)`, `complement(join(...))`) representam
+genes com íntrons, genes na fita negativa e, em genomas circulares, genes que atravessam a
+origem da numeração. `feature.extract(seq)` resolve tudo isso e devolve o gene na orientação
+5'→3'; `len(feature.location)` soma só as partes, sem os íntrons.
+
+```{python}
+#| label: coordenadas-rbcL
+rbcl = next(
+    (
+        f for f in record.features
+        if f.type == "CDS" and f.qualifiers.get("gene", [""])[0] == "rbcL"
+    ),
+    None,
+)
+if rbcl is None:
+    print("rbcL nao anotado com /gene=rbcL neste registro")
+else:
+    inicio, fim = coordenadas_genbank(rbcl)
+    n = len(rbcl.location)
+    print(f"Localizacao Biopython   : {rbcl.location}")
+    print(f"GenBank (base 1)        : {inicio}..{fim}")
+    print(f"Fatia Python            : record.seq[{inicio - 1}:{fim}]")
+    print(f"Comprimento             : {n} pb = {n // 3} codons")
+    print(f"Primeiros 30 nt (5'->3'): {rbcl.extract(record.seq)[:30]}")
+```
+
+## O código genético como função, e por que o DNA não é a proteína
+
+O código genético é uma função $g: \Sigma^3 \to \mathcal{A} \cup \{*\}$ dos 64 códons nos 20
+aminoácidos mais o sinal de parada. Ela é sobrejetora e muito redundante, e não é única: o
+NCBI mantém várias tabelas. Plastídios usam a **tabela 11**, que traduz como a padrão mas
+aceita mais códons de início:
+
+```{python}
+#| label: tabela-11
+t11 = CodonTable.unambiguous_dna_by_id[11]
+print(f"Tabela {t11.id}: {t11.names[0]}")
+print("Codons de inicio:", ", ".join(sorted(t11.start_codons)))
+print("Codons de parada:", ", ".join(sorted(t11.stop_codons)))
+```
+
+Mesmo com a tabela certa, traduzir o DNA de um plastídio nem sempre reproduz a proteína.
+Plantas fazem **edição de RNA**: depois da transcrição, citidinas específicas viram uridinas
+(C→U), o que pode criar um códon de início onde o DNA tem `ACG`, ou trocar um aminoácido no
+meio da proteína. Por isso a anotação `/translation` de um registro pode divergir em poucas
+posições da tradução direta do DNA, e essa divergência é informação biológica, não ruído.
+
+A validação desta aula usa `translate(table=11, cds=True)`, que exige códon de início válido,
+comprimento múltiplo de 3, um único stop no fim e nenhum stop interno, e depois compara com
+`/translation` contando as posições diferentes (distância de Hamming).
+
+## NCBI Entrez feito do jeito certo
+
+```{mermaid}
+flowchart LR
+  T["termo de busca"] --> S["ESearch<br/>usehistory=y"]
+  S --> H["WebEnv + query_key<br/>(servidor de histórico)"]
+  H --> F["EFetch em lotes<br/>rettype=gb"]
+  F --> C["cache local<br/>accession.version + .json"]
+  C --> P["SeqIO.read / parse"]
+```
+
+As E-utilities do NCBI se combinam em cadeia: **ESearch** transforma um termo em UIDs,
+**ESummary** traz resumos, **EFetch** traz os registros completos e **ELink** atravessa
+bancos [@kans_eutils]. Para conjuntos grandes, o servidor de histórico guarda o resultado da
+busca no próprio NCBI e devolve um par `WebEnv`/`query_key`, que permite baixar tudo em lotes
+sem reenviar listas de milhares de identificadores.
+
+Quatro regras de conduta, todas aplicadas em `bioflora.ncbi`:
+
+1. **Identificação.** O NCBI exige um email (`Entrez.email`); com chave de API o limite sobe
+   de 3 para 10 requisições por segundo. O Biopython já respeita esse limite e repete falhas
+   transitórias sozinho [@cock2009biopython], então não reimplementamos isso.
+2. **Accession com versão.** `KY404932.1` é imutável; `KY404932` aponta para a revisão mais
+   recente e pode mudar. Análise reprodutível cita sempre `accession.version`.
+3. **Cache.** Baixar uma vez, ler do disco sempre. O arquivo fica em
+   `03_dados/brutos/ncbi/`, com um `.json` de proveniência (data UTC, tamanho, SHA-256).
+4. **Validação.** O NCBI pode devolver texto de erro com HTTP 200; o conteúdo só vira cache
+   se começar com a assinatura do formato (`LOCUS` para GenBank).
+
+## Memória: ler, iterar ou indexar
+
+| Função | O que faz | Quando usar |
+|---|---|---|
+| `SeqIO.read(arq, fmt)` | carrega exatamente um registro | um plastoma, um gene |
+| `SeqIO.parse(arq, fmt)` | iterador: um registro por vez | arquivos multi-registro processados em fluxo |
+| `SeqIO.index(arq, fmt)` | dicionário de *offsets* no disco | acesso aleatório a arquivos grandes sem carregá-los |
+
+Um plastoma de ~146 kb ocupa ~146 KB como bytes: cabe com folga. A disciplina importa
+quando o arquivo tem milhares de registros ou genomas nucleares: aí `parse` e `index`
+mantêm a memória constante.
+
+## Laboratório
+
+No terminal, a partir de `01_estudos` com o `.venv` ativo:
+
+```powershell
+python scripts/m01_s01_plastoma.py
+```
+
+O script busca os plastomas da espécie com histórico, baixa `KY404932.1` para o cache (só na
+primeira vez), grava a tabela de anotações e a validação das CDS em
+`03_dados/processados/plastomas/` e imprime um resumo com marcadores `[OK]`/`[AVISO]`.
+
+### O registro
+
+```{python}
+#| label: resumo
+#| output: asis
+r = resumo_registro(record)
+prov = ler_proveniencia(ARQ_GB)
+linhas = [
+    ("Accession", r["accession"]),
+    ("Organismo", r["organismo"]),
+    ("Descrição", r["descricao"]),
+    ("Topologia / molécula", f"{r['topologia']} / {r['molecula']}"),
+    ("Comprimento", f"{r['comprimento_pb']:,} pb".replace(",", ".")),
+    ("GC global", f"{r['gc_pct']}%".replace(".", ",")),
+    ("Genes únicos (CDS, tRNA, rRNA)", ", ".join(str(v) for v in r["genes_unicos"].values())),
+    ("Baixado em (UTC)", prov.get("baixado_em_utc", "-")),
+]
+tabela(pd.DataFrame(linhas, columns=["Campo", "Valor"]))
+```
+
+### Conteúdo gênico por tipo
+
+```{python}
+#| label: conteudo-genico
+#| output: asis
+por_tipo = (
+    feats[feats["tipo"].isin(["CDS", "tRNA", "rRNA"])]
+    .groupby("tipo")
+    .agg(
+        anotacoes=("gene", "size"),
+        genes_unicos=("gene", "nunique"),
+        comprimento_medio_pb=("comprimento", "mean"),
+        gc_medio_pct=("gc_pct", "mean"),
+    )
+    .round(1)
+    .reset_index()
+)
+tabela(por_tipo)
+```
+
+Genes anotados em mais de uma cópia:
+
+```{python}
+#| label: repetidos
+#| output: asis
+rep = genes_repetidos(record)
+tabela(rep if not rep.empty else pd.DataFrame({"resultado": ["nenhum gene repetido"]}))
+```
+
+### Mapa linear e composição
+
+```{python}
+#| label: fig-mapa
+#| fig-cap: "Genes por fita ao longo do plastoma (acima) e GC em janelas de 1 kb com passo de 250 pb (abaixo). A linha tracejada marca o GC global."
+import matplotlib.pyplot as plt
+
+SUPERFICIE, TEXTO, TEXTO_2 = "#fcfcfb", "#0b0b0b", "#52514e"
+CORES = {"CDS": "#2a78d6", "tRNA": "#eb6834", "rRNA": "#1baf7a"}
+
+fig, (ax_genes, ax_gc) = plt.subplots(
+    2, 1, figsize=(10, 4.4), sharex=True, gridspec_kw={"height_ratios": [1.1, 1]}
+)
+fig.patch.set_facecolor(SUPERFICIE)
+for tipo, cor in CORES.items():
+    for f in record.features:
+        if f.type != tipo:
+            continue
+        for parte in f.location.parts:
+            y = 0.5 if (parte.strand or 1) > 0 else -0.5
+            ax_genes.broken_barh(
+                [(int(parte.start) / 1000, len(parte) / 1000)],
+                (y - 0.32, 0.64), facecolors=cor, edgecolor="none",
+            )
+    ax_genes.plot([], [], color=cor, linewidth=6, label=tipo)
+ax_genes.set_yticks([0.5, -0.5], ["fita +", "fita -"], color=TEXTO_2)
+ax_genes.set_ylim(-1, 1)
+ax_genes.legend(
+    loc="lower right", bbox_to_anchor=(1.0, 1.0), ncols=3, frameon=False, fontsize=9
+)
+
+centros, gc = gc_janela(record.seq, janela=1000, passo=250)
+ax_gc.plot(centros / 1000, gc, color=TEXTO_2, linewidth=1.2)
+ax_gc.axhline(r["gc_pct"], color=TEXTO, linewidth=1, linestyle="--")
+ax_gc.set_ylabel("GC (%)", color=TEXTO_2)
+ax_gc.set_xlabel("posição no plastoma (kb)", color=TEXTO_2)
+
+for ax in (ax_genes, ax_gc):
+    ax.set_facecolor(SUPERFICIE)
+    ax.tick_params(colors=TEXTO_2, labelsize=9)
+    for lado in ("top", "right"):
+        ax.spines[lado].set_visible(False)
+    for lado in ("left", "bottom"):
+        ax.spines[lado].set_color("#d9d8d4")
+ax_gc.grid(axis="y", color="#ecebe8", linewidth=0.8)
+ax_gc.set_xlim(0, len(record.seq) / 1000)
+fig.tight_layout()
+plt.show()
+```
+
+### Validação das proteínas anotadas
+
+```{python}
+#| label: validacao-resumo
+#| output: asis
+diverge = val["confere_anotacao"].eq(False).fillna(False)
+resumo_val = pd.DataFrame(
+    [
+        ("CDS anotadas", len(val)),
+        ("Válidas pela tabela 11 (cds=True)", int(val["cds_valida"].sum())),
+        ("Com /translation", int(val["tem_anotacao"].sum())),
+        ("Tradução idêntica à anotação", int(val["confere_anotacao"].fillna(False).sum())),
+        ("Divergem da anotação", int(diverge.sum())),
+    ],
+    columns=["Verificação", "CDS"],
+)
+tabela(resumo_val)
+```
+
+CDS que merecem um olhar de biólogo (inválidas pela tabela 11 ou divergentes da anotação):
+
+```{python}
+#| label: validacao-suspeitas
+#| output: asis
+suspeitas = val[(~val["cds_valida"]) | diverge][
+    ["gene", "comprimento_nt", "codon_inicio", "stops_internos", "diferencas_aa", "motivo"]
+]
+tabela(suspeitas if not suspeitas.empty else pd.DataFrame({"resultado": ["nenhuma"]}))
+```
+
+Antes de concluir qualquer coisa, leia cada linha com três hipóteses em mente: **edição de
+RNA** (poucas diferenças, códon `ACG` no início), **anotação herdada** de outra espécie por
+transferência automática, e **erro de montagem**. O plastoma da espécie descrito por
+@brandao2019araucaria foi montado a partir de RNA-seq, ou seja, de transcritos; se
+`KY404932.1` for esse depósito (exercício 3), a sequência pode já carregar parte das
+edições. Distinguir as hipóteses exige alinhar com plastomas de espécies próximas, o que
+faremos no Módulo 2.
+
+## Exercícios
+
+1. **Propriedade da involução.** Escreva em `tests/` um teste que gere 1.000 sequências
+   aleatórias e verifique que `rc(rc(s)) == s` e que `gc_percent(s) == gc_percent(rc(s))`.
+   Explique, com a definição de $c$, por que a segunda igualdade vale.
+2. **Barcodes para o Módulo 3.** Extraia *rbcL* e *matK* deste registro com
+   `feature.extract` e salve um FASTA em `03_dados/processados/plastomas/`. Confira o
+   comprimento de cada um em códons.
+3. **Quem depositou?** Abra o campo `REFERENCE` do arquivo `.gb` (ou
+   `record.annotations["references"]`). O depósito `KY404932.1` corresponde ao trabalho de
+   @brandao2019araucaria? Registre a resposta no diário de bordo.
+4. **Teste uma afirmação publicada.** A tabela de genes repetidos confirma que só *rrn5* e
+   *trnI-CAU* aparecem em mais de uma cópia? Se não, investigue a nomenclatura (`/gene`
+   versus `/product`) antes de concluir.
+5. **Comparação congenérica.** Rode o script com `--accession NC_026450.1`
+   (*Araucaria heterophylla*, usado como referência na montagem da araucária) e compare
+   comprimento, GC e conteúdo gênico.
+6. **Complexidade.** Mostre que `gc_janela` é $O(n)$ enquanto a versão ingênua é $O(n\,w)$.
+   Meça os dois com `timeit` para $w = 1.000$ no plastoma inteiro.
+
+## Referências {.unnumbered}
+
+::: {#refs}
+:::

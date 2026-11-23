@@ -122,3 +122,6 @@ dados/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+/.quarto/
+**/*.quarto_ipynb

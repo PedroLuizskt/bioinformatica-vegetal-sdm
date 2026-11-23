@@ -19,6 +19,9 @@ book:
     - part: "Módulo 0 - Setup e arquitetura"
       chapters:
         - modulos/m00-setup/aula-00.qmd
+    - part: "Módulo 1 - Sequências e ocorrências como dados"
+      chapters:
+        - modulos/m01-sequencias-ocorrencias/aula-01.qmd
 
 lang: pt-BR
 bibliography: referencias/referencias.bib
