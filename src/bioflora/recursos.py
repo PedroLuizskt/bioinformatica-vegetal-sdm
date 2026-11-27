@@ -4,6 +4,9 @@ Tres regras viram codigo aqui:
 1. Teto de threads (4) para BLAS/OpenMP/numexpr.
 2. Monitoramento de RAM do processo contra um teto seguro (~4,5 GB).
 3. Conexao DuckDB ja nascida com memory_limit, threads e spill em disco.
+
+Inclui tambem ``cronometrar``, usado nos benchmarks das sessoes (medir antes de
+otimizar e parte do mesmo cuidado com recursos).
 """
 
 from __future__ import annotations
@@ -11,6 +14,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+from collections.abc import Callable
 from typing import Any
 
 MAX_THREADS = 4
@@ -93,6 +97,22 @@ def log_memoria(
         f"disponivel={s['disponivel_gb']:.2f} de {s['total_gb']:.2f} GB",
     )
     return s
+
+
+def cronometrar(funcao: Callable[[], Any], repeticoes: int = 5) -> float:
+    """Tempo por chamada de ``funcao``, em ms: o menor de ``repeticoes`` lotes.
+
+    O tamanho do lote vem de ``timeit.Timer.autorange`` (cada lote dura pelo menos
+    0,2 s). Usa o minimo, e nao a media, porque interferencias do sistema
+    operacional so somam tempo: o menor lote e o mais proximo do custo real.
+    """
+    import timeit
+
+    if repeticoes < 1:
+        raise ValueError("repeticoes deve ser >= 1")
+    cronometro = timeit.Timer(funcao)
+    n, _ = cronometro.autorange()
+    return min(cronometro.repeat(repeat=repeticoes, number=n)) / n * 1000.0
 
 
 def conectar_duckdb(

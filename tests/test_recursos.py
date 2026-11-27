@@ -59,6 +59,20 @@ def test_memoria_status_coerente():
     assert 0 < s["processo_gb"] < s["total_gb"]
 
 
+def test_cronometrar_mede_em_ms():
+    import time
+
+    rapido = recursos.cronometrar(lambda: sum(range(100)), repeticoes=2)
+    lento = recursos.cronometrar(lambda: time.sleep(0.002), repeticoes=1)
+    assert 0 < rapido < lento
+    assert lento >= 2.0  # dormir 2 ms nunca custa menos de 2 ms
+
+
+def test_cronometrar_rejeita_zero_repeticoes():
+    with pytest.raises(ValueError):
+        recursos.cronometrar(lambda: None, repeticoes=0)
+
+
 def test_aviso_quando_numpy_veio_antes_sem_variaveis(monkeypatch):
     import numpy  # noqa: F401  (garante numpy em sys.modules)
 

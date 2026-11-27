@@ -22,10 +22,13 @@ from Bio.Data import CodonTable
 
 from bioflora.config import dir_dados
 from bioflora.ncbi import caminho_cache, ler_proveniencia
+from bioflora.recursos import cronometrar
 from bioflora.sequencias import (
+    comparar_copias,
     coordenadas_genbank,
     features_para_dataframe,
     gc_janela,
+    gc_janela_ingenua,
     genes_repetidos,
     resumo_registro,
     validar_cds,
@@ -73,7 +76,7 @@ Coníferas perderam uma das cópias da repetição invertida, e Pinaceae e as de
 (cupressófitas, que incluem Araucariaceae) perderam cópias diferentes [@wu2011conifer].
 No plastoma de *Araucaria angustifolia*, a organização LSC/SSC/IRa/IRb não está presente
 e os genes que ficariam na IR aparecem em cópia única, com exceção de *rrn5* e
-*trnI-CAU* [@brandao2019araucaria]. Começar por uma exceção é proposital: ela obriga a
+*trnI-CAU* [@brandao2019araucaria, montagem MH599004]. Começar por uma exceção é proposital: ela obriga a
 medir em vez de presumir. Na Sessão 2 vamos detectar repetições invertidas por
 algoritmo e comparar a araucária com um ipê, que tem a estrutura canônica.
 :::
@@ -346,11 +349,13 @@ tabela(suspeitas if not suspeitas.empty else pd.DataFrame({"resultado": ["nenhum
 
 Antes de concluir qualquer coisa, leia cada linha com três hipóteses em mente: **edição de
 RNA** (poucas diferenças, códon `ACG` no início), **anotação herdada** de outra espécie por
-transferência automática, e **erro de montagem**. O plastoma da espécie descrito por
-@brandao2019araucaria foi montado a partir de RNA-seq, ou seja, de transcritos; se
-`KY404932.1` for esse depósito (exercício 3), a sequência pode já carregar parte das
-edições. Distinguir as hipóteses exige alinhar com plastomas de espécies próximas, o que
-faremos no Módulo 2.
+transferência automática, e **erro de montagem**. O método de obtenção da sequência também
+pesa: a espécie tem dois plastomas completos no GenBank, de grupos e dados diferentes.
+`KY404932.1`, o desta aula, foi depositado por Vieira e colaboradores (UFSC) e não declara o
+método no registro; `MH599004` foi montado por @brandao2019araucaria a partir de RNA-seq,
+isto é, de transcritos, e por isso pode já carregar parte das edições na própria sequência
+(exercício 3). Distinguir as hipóteses exige alinhar com plastomas de espécies próximas, o
+que faremos no Módulo 2.
 
 ## O que o registro real mostrou
 
@@ -392,8 +397,10 @@ relatados 82 genes codificadores, 36 genes de tRNA e 4 de rRNA, também sem IRs 
 
 **Cópias: duas confirmam o artigo, três vão além dele.** Os genes anotados em mais de uma
 cópia são `r py$repetidos_txt`. *rrn5* e *trnI-CAU* são exatamente as exceções descritas por
-@brandao2019araucaria para genes que ficariam na IR ancestral. Os tRNAs *trnD-GUC*,
-*trnY-GUA* e *trnR-UCU* não fazem parte da IR ancestral: suas cópias são outro fenômeno.
+@brandao2019araucaria para genes que ficariam na IR ancestral. Como `KY404932.1` é uma
+montagem independente da deles (outro grupo, outros dados), a concordância vale como
+evidência independente: o princípio do parágrafo anterior, desta vez a favor. Os tRNAs
+*trnD-GUC*, *trnY-GUA* e *trnR-UCU* não fazem parte da IR ancestral: suas cópias são outro fenômeno.
 Coníferas adquiriram repetições invertidas curtas e novas, algumas recombinacionalmente
 ativas [@guo2014juniperus], formadas principalmente por genes de tRNA; em *Retrophyllum
 piresii* (Podocarpaceae), *trnN-GUU* e *trnD-GUC* aparecem duplicados como repetições
@@ -446,10 +453,204 @@ dessa repetição só aparecem quando a procuramos na sequência inteira, por al
    *trnI-CAU* aparecem em mais de uma cópia? Se não, investigue a nomenclatura (`/gene`
    versus `/product`) antes de concluir.
 5. **Comparação congenérica.** Rode o script com `--accession NC_026450.1`
-   (*Araucaria heterophylla*, usado como referência na montagem da araucária) e compare
-   comprimento, GC e conteúdo gênico.
-6. **Complexidade.** Mostre que `gc_janela` é $O(n)$ enquanto a versão ingênua é $O(n\,w)$.
-   Meça os dois com `timeit` para $w = 1.000$ no plastoma inteiro.
+   (*Araucaria heterophylla*, usado por @brandao2019araucaria para orientar os scaffolds
+   da montagem deles) e compare comprimento, GC e conteúdo gênico.
+6. **Complexidade.** Mostre que `gc_janela` custa $O(n)$ e que a versão ingênua custa
+   $O(n\,w/p)$, em que $p$ é o passo. Meça as duas para $w = 1.000$ e vários passos e
+   encontre o $w/p$ a partir do qual a versão $O(n)$ vence.
+
+Os exercícios 2 a 6 estão resolvidos em `scripts/m01_s01_exercicios.py`.
+
+## Exercícios comentados
+
+```{python}
+#| label: gabarito-dados
+#| include: false
+import numpy as np
+from Bio.Align import PairwiseAligner
+
+ACC_CONGENERE = "NC_026450.1"
+ARQ_CONGENERE = caminho_cache(ACC_CONGENERE)
+if not ARQ_CONGENERE.exists():
+    raise FileNotFoundError(
+        f"{ARQ_CONGENERE} nao existe. Rode antes: "
+        f"python scripts/m01_s01_plastoma.py --accession {ACC_CONGENERE}"
+    )
+congenere = SeqIO.read(ARQ_CONGENERE, "genbank")
+
+
+def _txt(x, casas=1):
+    """Numero com virgula decimal, para o texto corrido."""
+    return f"{x:.{casas}f}".replace(".", ",")
+
+
+def _primeira(rec, tipo, gene):
+    for f in rec.features:
+        if f.type == tipo and f.qualifiers.get("gene", [""])[0] == gene:
+            return f
+    return None
+
+
+pb_focal = f"{len(record.seq):,}".replace(",", ".")
+
+# trnL-CAU de A. heterophylla contra o trnI-CAU do mesmo registro
+f_l = _primeira(congenere, "tRNA", "trnL-CAU")
+f_i = _primeira(congenere, "tRNA", "trnI-CAU")
+cau_ident = cau_total = cau_pct = cau_produto = "-"
+cau_fitas = "-"
+if f_l is not None and f_i is not None:
+    alinhador = PairwiseAligner(
+        mode="global",
+        match_score=1,
+        mismatch_score=-1,
+        open_gap_score=-2,
+        extend_gap_score=-0.5,
+    )
+    seq_l = str(f_l.extract(congenere.seq))
+    seq_i = str(f_i.extract(congenere.seq))
+    cont = alinhador.align(seq_l, seq_i)[0].counts()
+    cau_ident = cont.identities
+    cau_total = cont.identities + cont.mismatches + cont.gaps
+    cau_pct = _txt(100 * cau_ident / cau_total)
+    cau_produto = f_l.qualifiers.get("product", ["?"])[0]
+    opostas = (f_l.location.strand or 0) * (f_i.location.strand or 0) == -1
+    cau_fitas = "em fitas opostas" if opostas else "na mesma fita"
+
+nomes_cds = {
+    f.qualifiers.get("gene", [""])[0] for f in congenere.features if f.type == "CDS"
+}
+rbcl_nome = next((g for g in sorted(nomes_cds) if g.lower() == "rbcl"), "-")
+trna_focal = resumo_registro(record)["genes_unicos"]["tRNA"]
+trna_congenere = resumo_registro(congenere)["genes_unicos"]["tRNA"]
+nomes_trna = (
+    f.qualifiers.get("gene", [""])[0] for f in congenere.features if f.type == "tRNA"
+)
+trna_congenere_corr = len({"trnI-CAU" if g == "trnL-CAU" else g for g in nomes_trna if g})
+```
+
+### 1. A involução e o GC
+
+Escreva $r$ para a reversão e $c$ para o complemento aplicado base a base. As duas são
+involuções ($r \circ r = c \circ c = \mathrm{id}$) e comutam, porque $c$ age em cada
+posição sem olhar a ordem. Logo
+$\mathrm{rc} \circ \mathrm{rc} = r \circ c \circ r \circ c = (r \circ r) \circ (c \circ c) = \mathrm{id}$.
+Para o GC, $c$ leva o conjunto $\{G, C\}$ nele mesmo e $\{A, T\}$ nele mesmo, e $r$ não muda
+contagens. As duas contagens da razão (G+C e bases válidas) são idênticas em $s$ e em
+$\mathrm{rc}(s)$, então a igualdade é exata, sem tolerância numérica. O teste do repositório
+usa o alfabeto IUPAC completo: *S* e *W* são fixos sob $c$, e os pares *R/Y*, *K/M*, *B/V* e
+*D/H* são descartados dos dois lados.
+
+### 3. Quem depositou: leia o `REFERENCE` antes de citar
+
+O campo `REFERENCE` de `KY404932.1` aponta Vieira e colaboradores (Fitotecnia, UFSC), com
+submissão em dezembro de 2016 e artigo ainda não publicado na data do depósito. Não é o
+depósito de @brandao2019araucaria. A espécie tem, portanto, duas montagens independentes:
+
+| | `KY404932.1` (esta aula) | `MH599004` |
+|---|---|---|
+| Grupo | Vieira et al., UFSC | @brandao2019araucaria, UFRGS |
+| Dados | não declarados no registro | RNA-seq de 24 bibliotecas públicas |
+| Montagem | não declarada no registro | *de novo* (ABySS), orientada por `NC_026450.1` |
+| Comprimento | `r py$pb_focal` pb | 146.203 pb |
+| Genes codificadores | `r py$n_cds_unicos` | 80 |
+
+As 82 de 82 CDS que conferem com o `/translation` continuam sendo consistência interna, seja
+qual for o método: a tradução anotada sai da própria sequência depositada.
+
+### 4 e 5. Nomes não são sequências
+
+Saber se cópias com "sequências distintas" são genes diferentes exige alinhar as cópias.
+`comparar_copias` classifica cada par em `identica`, `borda` (uma cópia contida na outra:
+diferem só nos limites anotados) ou `divergente`, e diz se o par está na mesma fita
+(`direta`) ou em fitas opostas (`invertida`).
+
+```{python}
+#| label: copias-pareadas
+#| output: asis
+pares = pd.concat(
+    [comparar_copias(r).assign(accession=r.id) for r in (record, congenere)],
+    ignore_index=True,
+)
+colunas = [
+    "accession", "gene", "copia_a", "copia_b", "orientacao", "relacao",
+    "comprimento_a", "comprimento_b", "substituicoes", "gaps", "identidade_pct",
+]
+tabela(pares[colunas])
+```
+
+Em *A. heterophylla* aparecem três armadilhas de nome. O *rrn5* tem cópias de 120 e 121 pb
+com relação `borda`: é a mesma sequência, com um limite anotado uma base além. O gene
+anotado como *trnL-CAU* (produto `r py$cau_produto`) tem `r py$cau_ident` de
+`r py$cau_total` posições idênticas (`r py$cau_pct`%) ao *trnI-CAU* do mesmo registro e está
+`r py$cau_fitas`. Um tRNA de leucina com anticódon CAU não decodificaria nenhum códon de
+leucina (CAU pareia com AUG, ou com AUA após a modificação da base 34), então o rótulo não se
+sustenta: é a segunda cópia invertida do tRNA-CAU, a mesma duplicação que `KY404932.1` anota
+como *trnI-CAU* em duas cópias. Por fim, o *rbcL* está anotado como `r py$rbcl_nome`, e uma
+busca exata por nome simplesmente não o encontra. Com o rótulo do *trnL-CAU* corrigido, a
+contagem de tRNAs distintos de *A. heterophylla* cai de `r py$trna_congenere` para
+`r py$trna_congenere_corr`, contra `r py$trna_focal` em `KY404932.1`. O inverso também
+acontece: as duas cópias de *trnG-UCC* de
+*A. heterophylla* são `divergente`, uma com íntron e outra sem, e podem ser genes distintos
+sob o mesmo nome.
+
+Regra prática: contagem por nome mistura biologia com prática de anotação. Para comparar
+registros de grupos diferentes, normalize os nomes (caixa, sinônimos) e, principalmente,
+compare sequências. Fica para a Sessão 2, por busca na sequência inteira: a segunda cópia de
+*trnR-UCU* de `KY404932.1` existe em *A. heterophylla* sem anotação? E as cópias de
+*trnD-GUC*, idênticas e na mesma fita nas duas espécies, estão dentro de repetições diretas
+maiores?
+
+### 6. Complexidade: o que a notação O não diz
+
+A primeira medição deu a versão ingênua cerca de três vezes mais rápida (2,6 contra 7,6 ms
+por execução, com $w = 1.000$ e $p = 250$). Não havia erro de medição; havia três lições.
+
+1. **O custo da ingênua é $O(n\,w/p)$, não $O(n\,w)$.** São $(n - w)/p + 1$ janelas de $w$
+   leituras cada. Com $p = 250$, $w/p = 4$: cada base é lida só quatro vezes, e por
+   `str.count`, um laço em C muito otimizado. O enunciado original escondia o passo.
+2. **A constante da versão $O(n)$ estava ruim.** `np.isin` consumia mais da metade do tempo.
+   Uma tabela de consulta de 256 posições (um acesso direto por byte, com `np.take`) faz o
+   mesmo trabalho sem busca e passou a ser a implementação de `gc_janela`.
+3. **As duas funções não calculavam a mesma coisa.** A ingênua dividia por $w$, e não pelo
+   número de bases válidas (errado quando há N), e os centros saíam deslocados meia base.
+   Antes de cronometrar, prove que as duas devolvem o mesmo resultado. `gc_janela_ingenua`
+   agora tem a mesma semântica e serve de oráculo nos testes.
+
+As duas versões atuais, medidas no plastoma inteiro pela máquina que renderizou esta nota
+(`cronometrar`: o menor de três lotes, cada lote com pelo menos 0,2 s):
+
+```{python}
+#| label: benchmark-gc
+#| output: asis
+linhas = []
+for passo in (500, 50, 5, 1):
+    rapida = gc_janela(record.seq, 1000, passo)
+    ingenua = gc_janela_ingenua(record.seq, 1000, passo)
+    assert np.array_equal(rapida[0], ingenua[0])
+    assert np.allclose(rapida[1], ingenua[1], equal_nan=True)
+    ms_o_n = cronometrar(lambda p=passo: gc_janela(record.seq, 1000, p), 3)
+    ms_ing = cronometrar(lambda p=passo: gc_janela_ingenua(record.seq, 1000, p), 3)
+    linhas.append(
+        {
+            "passo": passo,
+            "w_sobre_p": 1000 // passo,
+            "janelas": int(rapida[0].size),
+            "ms_o_n": round(ms_o_n, 2),
+            "ms_ingenua": round(ms_ing, 2),
+            "razao": round(ms_ing / ms_o_n, 1),
+        }
+    )
+bench = pd.DataFrame(linhas)
+tabela(bench)
+variacao_o_n = _txt(bench["ms_o_n"].max() / bench["ms_o_n"].min())
+razao_final = f"{bench['razao'].iloc[-1]:.0f}"
+```
+
+Quando $w/p$ vai de 2 a 1.000, o custo da versão $O(n)$ varia `r py$variacao_o_n` vezes,
+enquanto o da ingênua cresce na proporção de $w/p$; no passo 1, a versão $O(n)$ é
+`r py$razao_final` vezes mais rápida. A notação O descreve como o custo cresce, não quanto
+ele vale num ponto. Para comparar algoritmos, varie o parâmetro que governa a assintótica
+(aqui, $w/p$) em vez de medir um único caso. A lição volta na Sessão 2, com k-mers.
 
 ## Referências {.unnumbered}
 

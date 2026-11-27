@@ -13,6 +13,8 @@ Layout do registro (base 0, semiaberto):
 
 from __future__ import annotations
 
+import random
+
 import numpy as np
 import pytest
 from Bio import SeqIO
@@ -21,9 +23,11 @@ from Bio.SeqFeature import CompoundLocation, FeatureLocation, SeqFeature
 from Bio.SeqRecord import SeqRecord
 
 from bioflora.sequencias import (
+    comparar_copias,
     coordenadas_genbank,
     features_para_dataframe,
     gc_janela,
+    gc_janela_ingenua,
     gc_percent,
     genes_repetidos,
     resumo_registro,
@@ -39,6 +43,9 @@ SEQ = (
     + "GCTTAA"  # c
     + "ACGAAATAA"  # e
 )
+
+# Alfabeto IUPAC completo: a propriedade do exercicio 1 tambem vale para ambiguos.
+IUPAC = "ACGTNRYSWKMBDHV"
 
 
 def _cds(local, gene: str, traducao: str) -> SeqFeature:
@@ -118,6 +125,53 @@ def test_genes_repetidos(registro):
     assert rep.to_dict("records") == [{"tipo": "tRNA", "gene": "trnX", "copias": 2}]
 
 
+def _registro_com_copias() -> SeqRecord:
+    """Quatro copias de um 'tRNA' de 25 nt, uma para cada caso de comparar_copias.
+
+    1: [0, 25) fita +       original
+    2: [35, 60) fita -      complemento reverso do original (copia invertida)
+    3: [70, 93) fita +      original sem as 2 primeiras bases (limite anotado)
+    4: [103, 128) fita +    original com 1 substituicao interna
+    """
+    trna = "GCGGATTTAGCTCAGTTGGGAGAGC"
+    mutado = trna[:10] + "A" + trna[11:]  # posicao 10 era C
+    espaco = "T" * 10
+    seq = (
+        trna + espaco + str(Seq(trna).reverse_complement()) + espaco
+        + trna[2:] + espaco + mutado
+    )  # fmt: skip
+    rec = SeqRecord(Seq(seq), id="SINT0002.1")
+    locais = [(0, 25, 1), (35, 60, -1), (70, 93, 1), (103, 128, 1)]
+    rec.features = [
+        SeqFeature(FeatureLocation(i, f, strand=s), type="tRNA",
+                   qualifiers={"gene": ["trnZ"]})
+        for i, f, s in locais
+    ]  # fmt: skip
+    return rec
+
+
+def test_comparar_copias_classifica_pares():
+    pares = comparar_copias(_registro_com_copias()).set_index(["copia_a", "copia_b"])
+    assert len(pares) == 6  # C(4, 2)
+
+    p = pares.loc[(1, 2)]
+    assert (p["relacao"], p["orientacao"]) == ("identica", "invertida")
+    assert p["identidade_pct"] == 100.0
+
+    p = pares.loc[(1, 3)]
+    assert (p["relacao"], p["orientacao"]) == ("borda", "direta")
+    assert (p["substituicoes"], p["gaps"]) == (0, 2)
+
+    p = pares.loc[(1, 4)]
+    assert p["relacao"] == "divergente"
+    assert (p["substituicoes"], p["gaps"], p["identidades"]) == (1, 0, 24)
+
+
+def test_comparar_copias_ignora_genes_de_copia_unica(registro):
+    pares = comparar_copias(registro)
+    assert set(pares["gene"]) == {"trnX"}
+
+
 def test_resumo_registro(registro):
     r = resumo_registro(registro)
     assert r["comprimento_pb"] == 59
@@ -128,6 +182,24 @@ def test_resumo_registro(registro):
 def test_gc_percent_ignora_ambiguos():
     assert gc_percent("ATGC") == 50.0
     assert gc_percent("GGNN") == 100.0
+
+
+def test_involucao_complemento_reverso_e_gc():
+    """Exercicio 1 (Aula 1): rc(rc(s)) == s e GC(s) == GC(rc(s)).
+
+    O complemento c troca G<->C e A<->T, entao leva o conjunto {G, C} nele mesmo;
+    inverter a ordem nao muda contagens. Logo a contagem de G+C e a de bases
+    validas sao as mesmas em s e em rc(s), e a igualdade e exata (mesmos inteiros
+    na mesma divisao), sem tolerancia numerica. Vale tambem para os ambiguos:
+    S (G/C) e W (A/T) sao fixos sob c, e R<->Y, K<->M, B<->V, D<->H sao
+    descartados nos dois lados.
+    """
+    rng = random.Random(42)
+    for _ in range(1000):
+        s = "".join(rng.choices(IUPAC, k=rng.randint(10, 500)))
+        rc = str(Seq(s).reverse_complement())
+        assert str(Seq(rc).reverse_complement()) == s
+        assert gc_percent(s) == gc_percent(rc)
 
 
 def test_gc_janela_somas_de_prefixo():
@@ -148,6 +220,32 @@ def test_gc_janela_igual_a_forca_bruta():
     assert len(centros) == len(pct)
 
 
+@pytest.mark.parametrize(("janela", "passo"), [(50, 1), (50, 7), (200, 50), (30, 90)])
+def test_gc_janela_igual_a_versao_ingenua(janela, passo):
+    rng = np.random.default_rng(janela + passo)
+    seq = "".join(rng.choice(list("ACGTNacgt"), size=2000))
+    rapida = gc_janela(seq, janela=janela, passo=passo)
+    ingenua = gc_janela_ingenua(seq, janela=janela, passo=passo)
+    np.testing.assert_array_equal(rapida[0], ingenua[0])
+    np.testing.assert_allclose(rapida[1], ingenua[1], equal_nan=True)
+
+
+def test_gc_janela_ignora_caixa_e_aceita_seq():
+    rng = np.random.default_rng(7)
+    texto = "".join(rng.choice(list("ACGTN"), size=3000))
+    referencia = gc_janela(texto, janela=300, passo=7)
+    misturada = "".join(b.lower() if i % 3 == 0 else b for i, b in enumerate(texto))
+    for variante in (misturada, Seq(texto), Seq(misturada)):
+        centros, pct = gc_janela(variante, janela=300, passo=7)
+        np.testing.assert_array_equal(centros, referencia[0])
+        np.testing.assert_allclose(pct, referencia[1])
+
+
+def test_gc_janela_sem_bases_validas_vira_nan():
+    _, pct = gc_janela("NNNNGGGG", janela=4, passo=4)
+    assert np.isnan(pct[0]) and pct[1] == 100.0
+
+
 def test_gc_janela_sequencia_curta():
     centros, pct = gc_janela("ACGT", janela=10)
     assert centros.size == 0 and pct.size == 0
@@ -164,24 +262,3 @@ def test_ida_e_volta_genbank(registro, tmp_path):
     assert features_para_dataframe(lido)["localizacao"].tolist() == (
         features_para_dataframe(registro)["localizacao"].tolist()
     )
-
-import random
-from Bio.Seq import Seq
-from Bio.SeqUtils import gc_fraction
-
-
-def test_involucao_complemento_reverso_e_gc():
-    """Exercício 1 (Aula 1): rc(rc(s)) == s e GC(s) == GC(rc(s)) em 1.000 sequências."""
-    rng = random.Random(42)
-    alfabeto = ("A", "C", "G", "T")
-
-    for _ in range(1000):
-        tamanho = rng.randint(10, 500)
-        seq_str = "".join(rng.choices(alfabeto, k=tamanho))
-        seq = Seq(seq_str)
-
-        rc1 = seq.reverse_complement()
-        rc2 = rc1.reverse_complement()
-
-        assert str(rc2) == seq_str
-        assert abs(gc_fraction(seq) - gc_fraction(rc1)) < 1e-12
