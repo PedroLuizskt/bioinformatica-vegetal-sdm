@@ -1,0 +1,39 @@
+#!/bin/sh
+# Pre-commit do repositorio: roda, antes de cada commit, as mesmas verificacoes
+# que o CI roda no GitHub (lint, formatacao e testes). Um commit que passaria
+# aqui e quebraria no CI deixa de existir.
+#
+# Ative uma vez por clone (fica gravado em .git/config, nao no repositorio):
+#   git config core.hooksPath .githooks
+# Para pular numa emergencia (o CI ainda vai acusar):
+#   git commit --no-verify
+
+if [ -x ".venv/Scripts/python.exe" ]; then
+  PY=".venv/Scripts/python.exe"   # Windows
+elif [ -x ".venv/bin/python" ]; then
+  PY=".venv/bin/python"           # Linux / macOS
+else
+  echo "[AVISO] .venv nao encontrado; verificacoes do pre-commit puladas"
+  exit 0
+fi
+
+ALVOS="src tests scripts"
+
+if ! "$PY" -m ruff check $ALVOS; then
+  echo "[ERRO] ruff check falhou. Muitos casos se corrigem com:"
+  echo "       ruff check --fix $ALVOS"
+  exit 1
+fi
+
+if ! "$PY" -m ruff format --check $ALVOS; then
+  echo "[ERRO] formatacao fora do padrao. Corrija com:"
+  echo "       ruff format $ALVOS"
+  exit 1
+fi
+
+if ! "$PY" -m pytest -q; then
+  echo "[ERRO] testes falharam; commit bloqueado"
+  exit 1
+fi
+
+echo "[OK] pre-commit: lint, formatacao e testes passaram"

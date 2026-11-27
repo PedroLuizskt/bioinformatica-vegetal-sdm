@@ -2,6 +2,9 @@
 # Roda em Linux e Windows para provar que o pacote bioflora e multiplataforma.
 # Usa requirements/base.txt (intencao): o requirements.lock.txt e gerado no
 # Windows e traz pacotes exclusivos dele (ex.: pywin32).
+# Todos os passos rodam em bash (Git Bash no Windows): com "-eo pipefail", um
+# passo de varias linhas falha no primeiro comando que falhar. No pwsh padrao do
+# Windows, so o codigo de saida do ULTIMO comando contaria.
 name: CI
 
 on:
@@ -27,6 +30,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.12"]
+    defaults:
+      run:
+        shell: bash
     env:
       OMP_NUM_THREADS: "4"
       OPENBLAS_NUM_THREADS: "4"
@@ -49,10 +55,11 @@ jobs:
           python -m pip install -r requirements/base.txt
           python -m pip install --no-deps -e .
 
-      - name: Lint (ruff)
-        run: |
-          ruff check src tests scripts
-          ruff format --check src tests scripts
+      - name: Lint (ruff check)
+        run: ruff check --output-format=github src tests scripts
+
+      - name: Formatacao (ruff format)
+        run: ruff format --check --diff src tests scripts
 
       - name: Testes (pytest)
         run: python -m pytest
