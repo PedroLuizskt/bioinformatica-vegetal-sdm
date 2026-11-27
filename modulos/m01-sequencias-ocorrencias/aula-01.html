@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="pt-BR" xml:lang="pt-BR"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.11.9">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Um genoma de cloroplasto de araucária, do NCBI ao Parquet, com cache, proveniência e validação das proteínas anotadas.">
+
+<title>2&nbsp; Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez – Bioinformática Vegetal e Modelagem de Distribuição de Espécies</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../modulos/m00-setup/aula-00.html" rel="prev">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-935c6021a20cabd97eab0a19f480e49c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "Nenhum resultado",
+    "search-matching-documents-text": "documentos correspondentes",
+    "search-copy-link-title": "Copiar link para a busca",
+    "search-hide-matches-text": "Esconder correspondências adicionais",
+    "search-more-match-text": "mais correspondência neste documento",
+    "search-more-matches-text": "mais correspondências neste documento",
+    "search-clear-button-title": "Limpar",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancelar",
+    "search-submit-button-title": "Enviar",
+    "search-label": "Procurar"
+  }
+}</script>
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-sidebar floating quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Pular para o conteúdo principal</a>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav" aria-label="Barra de ferramentas">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Alternar barra lateral" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="Caminho"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../modulos/m01-sequencias-ocorrencias/aula-01.html">Módulo 1 - Sequências e ocorrências como dados</a></li><li class="breadcrumb-item"><a href="../../modulos/m01-sequencias-ocorrencias/aula-01.html"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span></a></li></ol></nav>
+        <a class="flex-grow-1" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Procurar" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto" aria-label="Site">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="../../">Bioinformática Vegetal e Modelagem de Distribuição de Espécies</a> 
+        <div class="sidebar-tools-main">
+    <a href="https://github.com/PedroLuizskt/bioinformatica-vegetal-sdm" title="Código fonte" class="quarto-navigation-tool px-1" aria-label="Código fonte"><i class="bi bi-github"></i></a>
+</div>
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Procurar"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Apresentação</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <button type="button" class="sidebar-item-text sidebar-item-toggle sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-controls="quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text" id="quarto-sidebar-section-1-label">Módulo 0 - Setup e arquitetura</span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <ul id="quarto-sidebar-section-1" aria-labelledby="quarto-sidebar-section-1-label" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../modulos/m00-setup/aula-00.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Aula 0 - Ambiente reprodutível em 8 GB de RAM</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <button type="button" class="sidebar-item-text sidebar-item-toggle sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-controls="quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text" id="quarto-sidebar-section-2-label">Módulo 1 - Sequências e ocorrências como dados</span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <ul id="quarto-sidebar-section-2" aria-labelledby="quarto-sidebar-section-2-label" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../modulos/m01-sequencias-ocorrencias/aula-01.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" aria-labelledby="toc-title" class="toc-active">
+    <h2 id="toc-title">Índice</h2>
+   
+  <ul>
+  <li><a href="#objetivos" id="toc-objetivos" class="nav-link active" data-scroll-target="#objetivos"><span class="header-section-number">2.1</span> Objetivos</a></li>
+  <li><a href="#por-que-começar-pelo-plastoma" id="toc-por-que-começar-pelo-plastoma" class="nav-link" data-scroll-target="#por-que-começar-pelo-plastoma"><span class="header-section-number">2.2</span> Por que começar pelo plastoma</a></li>
+  <li><a href="#a-sequência-como-objeto-matemático" id="toc-a-sequência-como-objeto-matemático" class="nav-link" data-scroll-target="#a-sequência-como-objeto-matemático"><span class="header-section-number">2.3</span> A sequência como objeto matemático</a></li>
+  <li><a href="#coordenadas-o-erro-de-um-que-todo-bioinformata-comete" id="toc-coordenadas-o-erro-de-um-que-todo-bioinformata-comete" class="nav-link" data-scroll-target="#coordenadas-o-erro-de-um-que-todo-bioinformata-comete"><span class="header-section-number">2.4</span> Coordenadas: o erro de um que todo bioinformata comete</a></li>
+  <li><a href="#o-código-genético-como-função-e-por-que-o-dna-não-é-a-proteína" id="toc-o-código-genético-como-função-e-por-que-o-dna-não-é-a-proteína" class="nav-link" data-scroll-target="#o-código-genético-como-função-e-por-que-o-dna-não-é-a-proteína"><span class="header-section-number">2.5</span> O código genético como função, e por que o DNA não é a proteína</a></li>
+  <li><a href="#ncbi-entrez-feito-do-jeito-certo" id="toc-ncbi-entrez-feito-do-jeito-certo" class="nav-link" data-scroll-target="#ncbi-entrez-feito-do-jeito-certo"><span class="header-section-number">2.6</span> NCBI Entrez feito do jeito certo</a></li>
+  <li><a href="#memória-ler-iterar-ou-indexar" id="toc-memória-ler-iterar-ou-indexar" class="nav-link" data-scroll-target="#memória-ler-iterar-ou-indexar"><span class="header-section-number">2.7</span> Memória: ler, iterar ou indexar</a></li>
+  <li><a href="#laboratório" id="toc-laboratório" class="nav-link" data-scroll-target="#laboratório"><span class="header-section-number">2.8</span> Laboratório</a>
+  <ul class="collapse">
+  <li><a href="#o-registro" id="toc-o-registro" class="nav-link" data-scroll-target="#o-registro"><span class="header-section-number">2.8.1</span> O registro</a></li>
+  <li><a href="#conteúdo-gênico-por-tipo" id="toc-conteúdo-gênico-por-tipo" class="nav-link" data-scroll-target="#conteúdo-gênico-por-tipo"><span class="header-section-number">2.8.2</span> Conteúdo gênico por tipo</a></li>
+  <li><a href="#mapa-linear-e-composição" id="toc-mapa-linear-e-composição" class="nav-link" data-scroll-target="#mapa-linear-e-composição"><span class="header-section-number">2.8.3</span> Mapa linear e composição</a></li>
+  <li><a href="#validação-das-proteínas-anotadas" id="toc-validação-das-proteínas-anotadas" class="nav-link" data-scroll-target="#validação-das-proteínas-anotadas"><span class="header-section-number">2.8.4</span> Validação das proteínas anotadas</a></li>
+  </ul></li>
+  <li><a href="#o-que-o-registro-real-mostrou" id="toc-o-que-o-registro-real-mostrou" class="nav-link" data-scroll-target="#o-que-o-registro-real-mostrou"><span class="header-section-number">2.9</span> O que o registro real mostrou</a></li>
+  <li><a href="#exercícios" id="toc-exercícios" class="nav-link" data-scroll-target="#exercícios"><span class="header-section-number">2.10</span> Exercícios</a></li>
+  <li><a href="#referências" id="toc-referências" class="nav-link" data-scroll-target="#referências">Referências</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/PedroLuizskt/bioinformatica-vegetal-sdm/blob/main/modulos/m01-sequencias-ocorrencias/aula-01.qmd" class="toc-action"><i class="bi bi-github"></i>Ver o código fonte</a></li><li><a href="https://github.com/PedroLuizskt/bioinformatica-vegetal-sdm/issues/new" class="toc-action"><i class="bi empty"></i>Criar uma issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content" tabindex="-1">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="Caminho"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../modulos/m01-sequencias-ocorrencias/aula-01.html">Módulo 1 - Sequências e ocorrências como dados</a></li><li class="breadcrumb-item"><a href="../../modulos/m01-sequencias-ocorrencias/aula-01.html"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span></a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span></h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">M1</div>
+    <div class="quarto-category">biopython</div>
+    <div class="quarto-category">ncbi</div>
+    <div class="quarto-category">plastoma</div>
+    <div class="quarto-category">araucaria</div>
+  </div>
+  </div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Data de Publicação</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">17 de novembro de 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="objetivos" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="objetivos"><span class="header-section-number">2.1</span> Objetivos</h2>
+<p>Ao final desta aula você deve saber:</p>
+<ul>
+<li>tratar uma sequência como objeto matemático e manipular <code>Seq</code>, <code>SeqRecord</code> e <code>SeqFeature</code>;</li>
+<li>converter coordenadas do GenBank (base 1, fechado) para Python (base 0, semiaberto) sem errar por um;</li>
+<li>explicar por que traduzir o DNA de um plastídio não reproduz, necessariamente, a proteína anotada;</li>
+<li>consultar o NCBI pelo Entrez com identificação, servidor de histórico, cache e proveniência;</li>
+<li>transformar um registro GenBank em tabelas Parquet prontas para análise.</li>
+</ul>
+</section>
+<section id="por-que-começar-pelo-plastoma" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="por-que-começar-pelo-plastoma"><span class="header-section-number">2.2</span> Por que começar pelo plastoma</h2>
+<p>O genoma do cloroplasto é o genoma de trabalho da sistemática e da filogeografia vegetal: herança uniparental, praticamente sem recombinação, centenas de cópias por célula e genes muito conservados. Os marcadores centrais do DNA barcoding de plantas, <em>rbcL</em> e <em>matK</em>, estão nele <span class="citation" data-cites="cbol2009barcode">(<a href="aula-01.html#ref-cbol2009barcode" role="doc-biblioref">CBOL Plant Working Group 2009</a>)</span>. Na maioria das plantas terrestres o plastoma tem 120–160 kb e uma estrutura quadripartida: uma região grande de cópia única (LSC), uma pequena (SSC) e duas repetições invertidas (IRa e IRb) que as separam.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Importante</span>A araucária quebra a regra de livro
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Coníferas perderam uma das cópias da repetição invertida, e Pinaceae e as demais coníferas (cupressófitas, que incluem Araucariaceae) perderam cópias diferentes <span class="citation" data-cites="wu2011conifer">(<a href="aula-01.html#ref-wu2011conifer" role="doc-biblioref">Wu et al. 2011</a>)</span>. No plastoma de <em>Araucaria angustifolia</em>, a organização LSC/SSC/IRa/IRb não está presente e os genes que ficariam na IR aparecem em cópia única, com exceção de <em>rrn5</em> e <em>trnI-CAU</em> <span class="citation" data-cites="brandao2019araucaria">(<a href="aula-01.html#ref-brandao2019araucaria" role="doc-biblioref">Brandão et al. 2019</a>)</span>. Começar por uma exceção é proposital: ela obriga a medir em vez de presumir. Na Sessão 2 vamos detectar repetições invertidas por algoritmo e comparar a araucária com um ipê, que tem a estrutura canônica.</p>
+</div>
+</div>
+</section>
+<section id="a-sequência-como-objeto-matemático" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="a-sequência-como-objeto-matemático"><span class="header-section-number">2.3</span> A sequência como objeto matemático</h2>
+<p>Uma molécula de DNA de fita simples, lida de 5’ para 3’, é uma palavra sobre o alfabeto <span class="math inline">\(\Sigma = \{A, C, G, T\}\)</span>, isto é, <span class="math inline">\(s = s_1 s_2 \dots s_n \in \Sigma^n\)</span>. Dados reais usam também os códigos de ambiguidade da IUPAC (<code>N</code> para qualquer base, <code>R</code> para A/G etc.).</p>
+<p>A fita complementar é obtida pela função de complemento <span class="math inline">\(c\)</span>, com <span class="math inline">\(c(A)=T\)</span>, <span class="math inline">\(c(C)=G\)</span> e vice-versa. Como as fitas são antiparalelas, a sequência da fita oposta, lida também de 5’ para 3’, é o <strong>complemento reverso</strong>:</p>
+<p><span class="math display">\[
+\mathrm{rc}(s)_i = c\left(s_{n+1-i}\right), \qquad i = 1, \dots, n.
+\]</span></p>
+<p><span class="math inline">\(\mathrm{rc}\)</span> é uma involução: <span class="math inline">\(\mathrm{rc}(\mathrm{rc}(s)) = s\)</span>. É isso que o atributo <code>strand</code> codifica: um gene na fita <span class="math inline">\(-1\)</span> é lido aplicando <span class="math inline">\(\mathrm{rc}\)</span> ao trecho da fita <span class="math inline">\(+1\)</span> que o GenBank armazena. Em Biopython, <code>Seq</code> guarda a sequência como bytes, <code>SeqRecord</code> adiciona identificador, anotações e a lista de <code>SeqFeature</code>, e cada <code>SeqFeature</code> tem um tipo (<code>CDS</code>, <code>tRNA</code>…), qualificadores (<code>/gene</code>, <code>/product</code>…) e uma localização.</p>
+</section>
+<section id="coordenadas-o-erro-de-um-que-todo-bioinformata-comete" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="coordenadas-o-erro-de-um-que-todo-bioinformata-comete"><span class="header-section-number">2.4</span> Coordenadas: o erro de um que todo bioinformata comete</h2>
+<p>O GenBank numera a partir de 1 e usa intervalos <strong>fechados</strong>; Python numera a partir de 0 e usa intervalos <strong>semiabertos</strong>. A mesma região é escrita assim nos dois sistemas:</p>
+<p><span class="math display">\[
+[a\,..\,b]_{\text{GenBank}} \;=\; [\,a-1,\; b\,)_{\text{Python}}, \qquad
+\text{comprimento} = b - a + 1 = \text{end} - \text{start}.
+\]</span></p>
+<p>O intervalo semiaberto não é capricho: o comprimento é a diferença direta das pontas, e <span class="math inline">\([i, j) \cup [j, k) = [i, k)\)</span> sem sobreposição, o que elimina uma classe inteira de erros ao fatiar e concatenar. Localizações compostas (<code>join(...)</code>, <code>complement(join(...))</code>) representam genes com íntrons, genes na fita negativa e, em genomas circulares, genes que atravessam a origem da numeração. <code>feature.extract(seq)</code> resolve tudo isso e devolve o gene na orientação 5’→3’; <code>len(feature.location)</code> soma só as partes, sem os íntrons.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>rbcl <span class="op">=</span> <span class="bu">next</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    (</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        f <span class="cf">for</span> f <span class="kw">in</span> record.features</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> f.<span class="bu">type</span> <span class="op">==</span> <span class="st">"CDS"</span> <span class="kw">and</span> f.qualifiers.get(<span class="st">"gene"</span>, [<span class="st">""</span>])[<span class="dv">0</span>] <span class="op">==</span> <span class="st">"rbcL"</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="va">None</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> rbcl <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"rbcL nao anotado com /gene=rbcL neste registro"</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    inicio, fim <span class="op">=</span> coordenadas_genbank(rbcl)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">len</span>(rbcl.location)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Localizacao Biopython   : </span><span class="sc">{</span>rbcl<span class="sc">.</span>location<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"GenBank (base 1)        : </span><span class="sc">{</span>inicio<span class="sc">}</span><span class="ss">..</span><span class="sc">{</span>fim<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Fatia Python            : record.seq[</span><span class="sc">{</span>inicio <span class="op">-</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">:</span><span class="sc">{</span>fim<span class="sc">}</span><span class="ss">]"</span>)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Comprimento             : </span><span class="sc">{</span>n<span class="sc">}</span><span class="ss"> pb = </span><span class="sc">{</span>n <span class="op">//</span> <span class="dv">3</span><span class="sc">}</span><span class="ss"> codons"</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Primeiros 30 nt (5'-&gt;3'): </span><span class="sc">{</span>rbcl<span class="sc">.</span>extract(record.seq)[:<span class="dv">30</span>]<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Localizacao Biopython   : [87561:88989](+)
+GenBank (base 1)        : 87562..88989
+Fatia Python            : record.seq[87561:88989]
+Comprimento             : 1428 pb = 476 codons
+Primeiros 30 nt (5'-&gt;3'): ATGTCACCAAAAACAGAAACTAAAACAGGT</code></pre>
+</div>
+</div>
+</section>
+<section id="o-código-genético-como-função-e-por-que-o-dna-não-é-a-proteína" class="level2" data-number="2.5">
+<h2 data-number="2.5" class="anchored" data-anchor-id="o-código-genético-como-função-e-por-que-o-dna-não-é-a-proteína"><span class="header-section-number">2.5</span> O código genético como função, e por que o DNA não é a proteína</h2>
+<p>O código genético é uma função <span class="math inline">\(g: \Sigma^3 \to \mathcal{A} \cup \{*\}\)</span> dos 64 códons nos 20 aminoácidos mais o sinal de parada. Ela é sobrejetora e muito redundante, e não é única: o NCBI mantém várias tabelas. Plastídios usam a <strong>tabela 11</strong>, que traduz como a padrão mas aceita mais códons de início:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>t11 <span class="op">=</span> CodonTable.unambiguous_dna_by_id[<span class="dv">11</span>]</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Tabela </span><span class="sc">{</span>t11<span class="sc">.</span><span class="bu">id</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>t11<span class="sc">.</span>names[<span class="dv">0</span>]<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Tabela 11: Bacterial</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Codons de inicio:"</span>, <span class="st">", "</span>.join(<span class="bu">sorted</span>(t11.start_codons)))</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Codons de inicio: ATA, ATC, ATG, ATT, CTG, GTG, TTG</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Codons de parada:"</span>, <span class="st">", "</span>.join(<span class="bu">sorted</span>(t11.stop_codons)))</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Codons de parada: TAA, TAG, TGA</code></pre>
+</div>
+</div>
+<p>Mesmo com a tabela certa, traduzir o DNA de um plastídio nem sempre reproduz a proteína. Plantas fazem <strong>edição de RNA</strong>: depois da transcrição, citidinas específicas viram uridinas (C→U), o que pode criar um códon de início onde o DNA tem <code>ACG</code>, ou trocar um aminoácido no meio da proteína. Por isso a anotação <code>/translation</code> de um registro pode divergir em poucas posições da tradução direta do DNA, e essa divergência é informação biológica, não ruído.</p>
+<p>A validação desta aula usa <code>translate(table=11, cds=True)</code>, que exige códon de início válido, comprimento múltiplo de 3, um único stop no fim e nenhum stop interno, e depois compara com <code>/translation</code> contando as posições diferentes (distância de Hamming).</p>
+</section>
+<section id="ncbi-entrez-feito-do-jeito-certo" class="level2" data-number="2.6">
+<h2 data-number="2.6" class="anchored" data-anchor-id="ncbi-entrez-feito-do-jeito-certo"><span class="header-section-number">2.6</span> NCBI Entrez feito do jeito certo</h2>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+
+<pre class="mermaid mermaid-js">flowchart LR
+  T["termo de busca"] --&gt; S["ESearch&lt;br/&gt;usehistory=y"]
+  S --&gt; H["WebEnv + query_key&lt;br/&gt;(servidor de histórico)"]
+  H --&gt; F["EFetch em lotes&lt;br/&gt;rettype=gb"]
+  F --&gt; C["cache local&lt;br/&gt;accession.version + .json"]
+  C --&gt; P["SeqIO.read / parse"]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>As E-utilities do NCBI se combinam em cadeia: <strong>ESearch</strong> transforma um termo em UIDs, <strong>ESummary</strong> traz resumos, <strong>EFetch</strong> traz os registros completos e <strong>ELink</strong> atravessa bancos <span class="citation" data-cites="kans_eutils">(<a href="aula-01.html#ref-kans_eutils" role="doc-biblioref">Kans 2010</a>)</span>. Para conjuntos grandes, o servidor de histórico guarda o resultado da busca no próprio NCBI e devolve um par <code>WebEnv</code>/<code>query_key</code>, que permite baixar tudo em lotes sem reenviar listas de milhares de identificadores.</p>
+<p>Quatro regras de conduta, todas aplicadas em <code>bioflora.ncbi</code>:</p>
+<ol type="1">
+<li><strong>Identificação.</strong> O NCBI exige um email (<code>Entrez.email</code>); com chave de API o limite sobe de 3 para 10 requisições por segundo. O Biopython já respeita esse limite e repete falhas transitórias sozinho <span class="citation" data-cites="cock2009biopython">(<a href="aula-01.html#ref-cock2009biopython" role="doc-biblioref">Cock et al. 2009</a>)</span>, então não reimplementamos isso.</li>
+<li><strong>Accession com versão.</strong> <code>KY404932.1</code> é imutável; <code>KY404932</code> aponta para a revisão mais recente e pode mudar. Análise reprodutível cita sempre <code>accession.version</code>.</li>
+<li><strong>Cache.</strong> Baixar uma vez, ler do disco sempre. O arquivo fica em <code>03_dados/brutos/ncbi/</code>, com um <code>.json</code> de proveniência (data UTC, tamanho, SHA-256).</li>
+<li><strong>Validação.</strong> O NCBI pode devolver texto de erro com HTTP 200; o conteúdo só vira cache se começar com a assinatura do formato (<code>LOCUS</code> para GenBank).</li>
+</ol>
+</section>
+<section id="memória-ler-iterar-ou-indexar" class="level2" data-number="2.7">
+<h2 data-number="2.7" class="anchored" data-anchor-id="memória-ler-iterar-ou-indexar"><span class="header-section-number">2.7</span> Memória: ler, iterar ou indexar</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Função</th>
+<th>O que faz</th>
+<th>Quando usar</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>SeqIO.read(arq, fmt)</code></td>
+<td>carrega exatamente um registro</td>
+<td>um plastoma, um gene</td>
+</tr>
+<tr class="even">
+<td><code>SeqIO.parse(arq, fmt)</code></td>
+<td>iterador: um registro por vez</td>
+<td>arquivos multi-registro processados em fluxo</td>
+</tr>
+<tr class="odd">
+<td><code>SeqIO.index(arq, fmt)</code></td>
+<td>dicionário de <em>offsets</em> no disco</td>
+<td>acesso aleatório a arquivos grandes sem carregá-los</td>
+</tr>
+</tbody>
+</table>
+<p>Um plastoma de ~146 kb ocupa ~146 KB como bytes: cabe com folga. A disciplina importa quando o arquivo tem milhares de registros ou genomas nucleares: aí <code>parse</code> e <code>index</code> mantêm a memória constante.</p>
+</section>
+<section id="laboratório" class="level2" data-number="2.8">
+<h2 data-number="2.8" class="anchored" data-anchor-id="laboratório"><span class="header-section-number">2.8</span> Laboratório</h2>
+<p>No terminal, a partir de <code>01_estudos</code> com o <code>.venv</code> ativo:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>python scripts<span class="op">/</span>m01_s01_plastoma<span class="op">.</span><span class="fu">py</span></span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<p>O script busca os plastomas da espécie com histórico, baixa <code>KY404932.1</code> para o cache (só na primeira vez), grava a tabela de anotações e a validação das CDS em <code>03_dados/processados/plastomas/</code> e imprime um resumo com marcadores <code>[OK]</code>/<code>[AVISO]</code>.</p>
+<section id="o-registro" class="level3" data-number="2.8.1">
+<h3 data-number="2.8.1" class="anchored" data-anchor-id="o-registro"><span class="header-section-number">2.8.1</span> O registro</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> resumo_registro(record)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>prov <span class="op">=</span> ler_proveniencia(ARQ_GB)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>linhas <span class="op">=</span> [</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Accession"</span>, r[<span class="st">"accession"</span>]),</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Organismo"</span>, r[<span class="st">"organismo"</span>]),</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Descrição"</span>, r[<span class="st">"descricao"</span>]),</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Topologia / molécula"</span>, <span class="ss">f"</span><span class="sc">{</span>r[<span class="st">'topologia'</span>]<span class="sc">}</span><span class="ss"> / </span><span class="sc">{</span>r[<span class="st">'molecula'</span>]<span class="sc">}</span><span class="ss">"</span>),</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Comprimento"</span>, <span class="ss">f"</span><span class="sc">{</span>r[<span class="st">'comprimento_pb'</span>]<span class="sc">:,}</span><span class="ss"> pb"</span>.replace(<span class="st">","</span>, <span class="st">"."</span>)),</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"GC global"</span>, <span class="ss">f"</span><span class="sc">{</span>r[<span class="st">'gc_pct'</span>]<span class="sc">}</span><span class="ss">%"</span>.replace(<span class="st">"."</span>, <span class="st">","</span>)),</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Genes únicos (CDS, tRNA, rRNA)"</span>, <span class="st">", "</span>.join(<span class="bu">str</span>(v) <span class="cf">for</span> v <span class="kw">in</span> r[<span class="st">"genes_unicos"</span>].values())),</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Baixado em (UTC)"</span>, prov.get(<span class="st">"baixado_em_utc"</span>, <span class="st">"-"</span>)),</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>tabela(pd.DataFrame(linhas, columns<span class="op">=</span>[<span class="st">"Campo"</span>, <span class="st">"Valor"</span>]))</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="dataframe table table-sm table-striped small">
+<thead>
+<tr>
+<th>
+Campo
+</th>
+<th>
+Valor
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Accession
+</td>
+<td>
+KY404932.1
+</td>
+</tr>
+<tr>
+<td>
+Organismo
+</td>
+<td>
+Araucaria angustifolia
+</td>
+</tr>
+<tr>
+<td>
+Descrição
+</td>
+<td>
+Araucaria angustifolia chloroplast, complete genome
+</td>
+</tr>
+<tr>
+<td>
+Topologia / molécula
+</td>
+<td>
+circular / DNA
+</td>
+</tr>
+<tr>
+<td>
+Comprimento
+</td>
+<td>
+145.558 pb
+</td>
+</tr>
+<tr>
+<td>
+GC global
+</td>
+<td>
+36,59%
+</td>
+</tr>
+<tr>
+<td>
+Genes únicos (CDS, tRNA, rRNA)
+</td>
+<td>
+82, 32, 4
+</td>
+</tr>
+<tr>
+<td>
+Baixado em (UTC)
+</td>
+<td>
+2026-11-23T23:24:12+00:00
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="conteúdo-gênico-por-tipo" class="level3" data-number="2.8.2">
+<h3 data-number="2.8.2" class="anchored" data-anchor-id="conteúdo-gênico-por-tipo"><span class="header-section-number">2.8.2</span> Conteúdo gênico por tipo</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>por_tipo <span class="op">=</span> (</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    feats[feats[<span class="st">"tipo"</span>].isin([<span class="st">"CDS"</span>, <span class="st">"tRNA"</span>, <span class="st">"rRNA"</span>])]</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    .groupby(<span class="st">"tipo"</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    .agg(</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>        anotacoes<span class="op">=</span>(<span class="st">"gene"</span>, <span class="st">"size"</span>),</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        genes_unicos<span class="op">=</span>(<span class="st">"gene"</span>, <span class="st">"nunique"</span>),</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>        comprimento_medio_pb<span class="op">=</span>(<span class="st">"comprimento"</span>, <span class="st">"mean"</span>),</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>        gc_medio_pct<span class="op">=</span>(<span class="st">"gc_pct"</span>, <span class="st">"mean"</span>),</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    .<span class="bu">round</span>(<span class="dv">1</span>)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    .reset_index()</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>tabela(por_tipo)</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="dataframe table table-sm table-striped small">
+<thead>
+<tr>
+<th>
+tipo
+</th>
+<th>
+anotacoes
+</th>
+<th>
+genes_unicos
+</th>
+<th>
+comprimento_medio_pb
+</th>
+<th>
+gc_medio_pct
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+CDS
+</td>
+<td>
+82
+</td>
+<td>
+82
+</td>
+<td>
+907.1
+</td>
+<td>
+38.4
+</td>
+</tr>
+<tr>
+<td>
+rRNA
+</td>
+<td>
+5
+</td>
+<td>
+4
+</td>
+<td>
+921.8
+</td>
+<td>
+52.3
+</td>
+</tr>
+<tr>
+<td>
+tRNA
+</td>
+<td>
+37
+</td>
+<td>
+32
+</td>
+<td>
+75.2
+</td>
+<td>
+54.0
+</td>
+</tr>
+</tbody>
+</table>
+<p>Genes anotados em mais de uma cópia:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>rep <span class="op">=</span> genes_repetidos(record)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>tabela(rep <span class="cf">if</span> <span class="kw">not</span> rep.empty <span class="cf">else</span> pd.DataFrame({<span class="st">"resultado"</span>: [<span class="st">"nenhum gene repetido"</span>]}))</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="dataframe table table-sm table-striped small">
+<thead>
+<tr>
+<th>
+tipo
+</th>
+<th>
+gene
+</th>
+<th>
+copias
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+rRNA
+</td>
+<td>
+rrn5
+</td>
+<td>
+2
+</td>
+</tr>
+<tr>
+<td>
+tRNA
+</td>
+<td>
+trnD-GUC
+</td>
+<td>
+3
+</td>
+</tr>
+<tr>
+<td>
+tRNA
+</td>
+<td>
+trnI-CAU
+</td>
+<td>
+2
+</td>
+</tr>
+<tr>
+<td>
+tRNA
+</td>
+<td>
+trnR-UCU
+</td>
+<td>
+2
+</td>
+</tr>
+<tr>
+<td>
+tRNA
+</td>
+<td>
+trnY-GUA
+</td>
+<td>
+2
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="mapa-linear-e-composição" class="level3" data-number="2.8.3">
+<h3 data-number="2.8.3" class="anchored" data-anchor-id="mapa-linear-e-composição"><span class="header-section-number">2.8.3</span> Mapa linear e composição</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>SUPERFICIE, TEXTO, TEXTO_2 <span class="op">=</span> <span class="st">"#fcfcfb"</span>, <span class="st">"#0b0b0b"</span>, <span class="st">"#52514e"</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>CORES <span class="op">=</span> {<span class="st">"CDS"</span>: <span class="st">"#2a78d6"</span>, <span class="st">"tRNA"</span>: <span class="st">"#eb6834"</span>, <span class="st">"rRNA"</span>: <span class="st">"#1baf7a"</span>}</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>fig, (ax_genes, ax_gc) <span class="op">=</span> plt.subplots(</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="dv">2</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="fl">4.4</span>), sharex<span class="op">=</span><span class="va">True</span>, gridspec_kw<span class="op">=</span>{<span class="st">"height_ratios"</span>: [<span class="fl">1.1</span>, <span class="dv">1</span>]}</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>fig.patch.set_facecolor(SUPERFICIE)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> tipo, cor <span class="kw">in</span> CORES.items():</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> f <span class="kw">in</span> record.features:</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> f.<span class="bu">type</span> <span class="op">!=</span> tipo:</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> parte <span class="kw">in</span> f.location.parts:</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>            y <span class="op">=</span> <span class="fl">0.5</span> <span class="cf">if</span> (parte.strand <span class="kw">or</span> <span class="dv">1</span>) <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="op">-</span><span class="fl">0.5</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>            ax_genes.broken_barh(</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>                [(<span class="bu">int</span>(parte.start) <span class="op">/</span> <span class="dv">1000</span>, <span class="bu">len</span>(parte) <span class="op">/</span> <span class="dv">1000</span>)],</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>                (y <span class="op">-</span> <span class="fl">0.32</span>, <span class="fl">0.64</span>), facecolors<span class="op">=</span>cor, edgecolor<span class="op">=</span><span class="st">"none"</span>,</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>    ax_genes.plot([], [], color<span class="op">=</span>cor, linewidth<span class="op">=</span><span class="dv">6</span>, label<span class="op">=</span>tipo)</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>ax_genes.set_yticks([<span class="fl">0.5</span>, <span class="op">-</span><span class="fl">0.5</span>], [<span class="st">"fita +"</span>, <span class="st">"fita -"</span>], color<span class="op">=</span>TEXTO_2)</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>ax_genes.set_ylim(<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>)</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>(-1.0, 1.0)</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>ax_genes.legend(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    loc<span class="op">=</span><span class="st">"lower right"</span>, bbox_to_anchor<span class="op">=</span>(<span class="fl">1.0</span>, <span class="fl">1.0</span>), ncols<span class="op">=</span><span class="dv">3</span>, frameon<span class="op">=</span><span class="va">False</span>, fontsize<span class="op">=</span><span class="dv">9</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>centros, gc <span class="op">=</span> gc_janela(record.seq, janela<span class="op">=</span><span class="dv">1000</span>, passo<span class="op">=</span><span class="dv">250</span>)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>ax_gc.plot(centros <span class="op">/</span> <span class="dv">1000</span>, gc, color<span class="op">=</span>TEXTO_2, linewidth<span class="op">=</span><span class="fl">1.2</span>)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>ax_gc.axhline(r[<span class="st">"gc_pct"</span>], color<span class="op">=</span>TEXTO, linewidth<span class="op">=</span><span class="dv">1</span>, linestyle<span class="op">=</span><span class="st">"--"</span>)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>ax_gc.set_ylabel(<span class="st">"GC (%)"</span>, color<span class="op">=</span>TEXTO_2)</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>ax_gc.set_xlabel(<span class="st">"posição no plastoma (kb)"</span>, color<span class="op">=</span>TEXTO_2)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax <span class="kw">in</span> (ax_genes, ax_gc):</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    ax.set_facecolor(SUPERFICIE)</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    ax.tick_params(colors<span class="op">=</span>TEXTO_2, labelsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> lado <span class="kw">in</span> (<span class="st">"top"</span>, <span class="st">"right"</span>):</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>        ax.spines[lado].set_visible(<span class="va">False</span>)</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> lado <span class="kw">in</span> (<span class="st">"left"</span>, <span class="st">"bottom"</span>):</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>        ax.spines[lado].set_color(<span class="st">"#d9d8d4"</span>)</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>ax_gc.grid(axis<span class="op">=</span><span class="st">"y"</span>, color<span class="op">=</span><span class="st">"#ecebe8"</span>, linewidth<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>ax_gc.set_xlim(<span class="dv">0</span>, <span class="bu">len</span>(record.seq) <span class="op">/</span> <span class="dv">1000</span>)</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>(0.0, 145.558)</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="fig-mapa" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-mapa-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="aula-01_files/figure-html/fig-mapa-1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-mapa-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figura&nbsp;2.1: Genes por fita ao longo do plastoma (acima) e GC em janelas de 1 kb com passo de 250 pb (abaixo). A linha tracejada marca o GC global.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="validação-das-proteínas-anotadas" class="level3" data-number="2.8.4">
+<h3 data-number="2.8.4" class="anchored" data-anchor-id="validação-das-proteínas-anotadas"><span class="header-section-number">2.8.4</span> Validação das proteínas anotadas</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>diverge <span class="op">=</span> val[<span class="st">"confere_anotacao"</span>].eq(<span class="va">False</span>).fillna(<span class="va">False</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>resumo_val <span class="op">=</span> pd.DataFrame(</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    [</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"CDS anotadas"</span>, <span class="bu">len</span>(val)),</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"Válidas pela tabela 11 (cds=True)"</span>, <span class="bu">int</span>(val[<span class="st">"cds_valida"</span>].<span class="bu">sum</span>())),</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"Com /translation"</span>, <span class="bu">int</span>(val[<span class="st">"tem_anotacao"</span>].<span class="bu">sum</span>())),</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"Tradução idêntica à anotação"</span>, <span class="bu">int</span>(val[<span class="st">"confere_anotacao"</span>].fillna(<span class="va">False</span>).<span class="bu">sum</span>())),</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>        (<span class="st">"Divergem da anotação"</span>, <span class="bu">int</span>(diverge.<span class="bu">sum</span>())),</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    columns<span class="op">=</span>[<span class="st">"Verificação"</span>, <span class="st">"CDS"</span>],</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>tabela(resumo_val)</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="dataframe table table-sm table-striped small">
+<thead>
+<tr>
+<th>
+Verificação
+</th>
+<th>
+CDS
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+CDS anotadas
+</td>
+<td>
+82
+</td>
+</tr>
+<tr>
+<td>
+Válidas pela tabela 11 (cds=True)
+</td>
+<td>
+82
+</td>
+</tr>
+<tr>
+<td>
+Com /translation
+</td>
+<td>
+82
+</td>
+</tr>
+<tr>
+<td>
+Tradução idêntica à anotação
+</td>
+<td>
+82
+</td>
+</tr>
+<tr>
+<td>
+Divergem da anotação
+</td>
+<td>
+0
+</td>
+</tr>
+</tbody>
+</table>
+<p>CDS que merecem um olhar de biólogo (inválidas pela tabela 11 ou divergentes da anotação):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>suspeitas <span class="op">=</span> val[(<span class="op">~</span>val[<span class="st">"cds_valida"</span>]) <span class="op">|</span> diverge][</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    [<span class="st">"gene"</span>, <span class="st">"comprimento_nt"</span>, <span class="st">"codon_inicio"</span>, <span class="st">"stops_internos"</span>, <span class="st">"diferencas_aa"</span>, <span class="st">"motivo"</span>]</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>tabela(suspeitas <span class="cf">if</span> <span class="kw">not</span> suspeitas.empty <span class="cf">else</span> pd.DataFrame({<span class="st">"resultado"</span>: [<span class="st">"nenhuma"</span>]}))</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="dataframe table table-sm table-striped small">
+<thead>
+<tr>
+<th>
+resultado
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+nenhuma
+</td>
+</tr>
+</tbody>
+</table>
+<p>Antes de concluir qualquer coisa, leia cada linha com três hipóteses em mente: <strong>edição de RNA</strong> (poucas diferenças, códon <code>ACG</code> no início), <strong>anotação herdada</strong> de outra espécie por transferência automática, e <strong>erro de montagem</strong>. O plastoma da espécie descrito por <span class="citation" data-cites="brandao2019araucaria">Brandão et al. (<a href="aula-01.html#ref-brandao2019araucaria" role="doc-biblioref">2019</a>)</span> foi montado a partir de RNA-seq, ou seja, de transcritos; se <code>KY404932.1</code> for esse depósito (exercício 3), a sequência pode já carregar parte das edições. Distinguir as hipóteses exige alinhar com plastomas de espécies próximas, o que faremos no Módulo 2.</p>
+</section>
+</section>
+<section id="o-que-o-registro-real-mostrou" class="level2" data-number="2.9">
+<h2 data-number="2.9" class="anchored" data-anchor-id="o-que-o-registro-real-mostrou"><span class="header-section-number">2.9</span> O que o registro real mostrou</h2>
+<p><strong>Nenhuma CDS suspeita, e por que isso não prova ausência de edição.</strong> As 82 de 82 CDS são válidas pela tabela 11, e 82 reproduzem exatamente o <code>/translation</code> anotado. Isso mostra consistência interna: a tradução anotada foi derivada da própria sequência depositada. No padrão INSDC, uma proteína sabidamente editada recebe o qualificador <code>/exception="RNA editing"</code>; este registro tem 0 CDS com qualquer <code>/exception</code>. Conclusão metodológica: comparar uma sequência com a tradução dela mesma só detecta inconsistência de anotação, não biologia. Estudar edição exige duas fontes independentes do mesmo gene, DNA genômico contra cDNA. <strong>O poder de uma validação depende da independência da evidência</strong>, e esse princípio volta na validação espacial de SDMs (M4).</p>
+<p><strong>O conteúdo gênico bate com o de uma congênere.</strong> O registro tem 82 genes codificadores e 32 tRNAs distintos. Para <em>Araucaria cunninghamii</em> foram relatados 82 genes codificadores, 36 genes de tRNA e 4 de rRNA, também sem IRs canônicas <span class="citation" data-cites="ping2020cunninghamii">(<a href="aula-01.html#ref-ping2020cunninghamii" role="doc-biblioref">Ping et al. 2020</a>)</span>.</p>
+<p><strong>Cópias: duas confirmam o artigo, três vão além dele.</strong> Os genes anotados em mais de uma cópia são <em>rrn5</em> (2x), <em>trnD-GUC</em> (3x), <em>trnI-CAU</em> (2x), <em>trnR-UCU</em> (2x), <em>trnY-GUA</em> (2x). <em>rrn5</em> e <em>trnI-CAU</em> são exatamente as exceções descritas por <span class="citation" data-cites="brandao2019araucaria">Brandão et al. (<a href="aula-01.html#ref-brandao2019araucaria" role="doc-biblioref">2019</a>)</span> para genes que ficariam na IR ancestral. Os tRNAs <em>trnD-GUC</em>, <em>trnY-GUA</em> e <em>trnR-UCU</em> não fazem parte da IR ancestral: suas cópias são outro fenômeno. Coníferas adquiriram repetições invertidas curtas e novas, algumas recombinacionalmente ativas <span class="citation" data-cites="guo2014juniperus">(<a href="aula-01.html#ref-guo2014juniperus" role="doc-biblioref">Guo et al. 2014</a>)</span>, formadas principalmente por genes de tRNA; em <em>Retrophyllum piresii</em> (Podocarpaceae), <em>trnN-GUU</em> e <em>trnD-GUC</em> aparecem duplicados como repetições invertidas e diretas <span class="citation" data-cites="vieira2016retrophyllum">(<a href="aula-01.html#ref-vieira2016retrophyllum" role="doc-biblioref"><span class="nocase">Vieira et al.</span> 2016</a>)</span>.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>alvo <span class="op">=</span> <span class="bu">set</span>(genes_repetidos(record)[[<span class="st">"tipo"</span>, <span class="st">"gene"</span>]].itertuples(index<span class="op">=</span><span class="va">False</span>, name<span class="op">=</span><span class="va">None</span>))</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>copias <span class="op">=</span> []</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> f <span class="kw">in</span> record.features:</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    chave <span class="op">=</span> (f.<span class="bu">type</span>, f.qualifiers.get(<span class="st">"gene"</span>, [<span class="st">""</span>])[<span class="dv">0</span>])</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> chave <span class="kw">in</span> alvo:</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>        inicio, fim <span class="op">=</span> coordenadas_genbank(f)</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>        copias.append(</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>            {</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>                <span class="st">"tipo"</span>: chave[<span class="dv">0</span>],</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>                <span class="st">"gene"</span>: chave[<span class="dv">1</span>],</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>                <span class="st">"inicio"</span>: inicio,</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>                <span class="st">"fim"</span>: fim,</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>                <span class="st">"fita"</span>: <span class="bu">int</span>(f.location.strand <span class="kw">or</span> <span class="dv">0</span>),</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>                <span class="st">"comprimento"</span>: <span class="bu">len</span>(f.location),</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>                <span class="st">"seq"</span>: <span class="bu">str</span>(f.extract(record.seq)),</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>copias <span class="op">=</span> pd.DataFrame(copias).sort_values([<span class="st">"gene"</span>, <span class="st">"inicio"</span>], ignore_index<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>copias[<span class="st">"identica_a_1a_copia"</span>] <span class="op">=</span> copias.groupby(<span class="st">"gene"</span>)[<span class="st">"seq"</span>].transform(</span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>    <span class="kw">lambda</span> s: s <span class="op">==</span> s.iloc[<span class="dv">0</span>]</span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>tabela(copias.drop(columns<span class="op">=</span><span class="st">"seq"</span>))</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="dataframe table table-sm table-striped small">
+<thead>
+<tr>
+<th>
+tipo
+</th>
+<th>
+gene
+</th>
+<th>
+inicio
+</th>
+<th>
+fim
+</th>
+<th>
+fita
+</th>
+<th>
+comprimento
+</th>
+<th>
+identica_a_1a_copia
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+rRNA
+</td>
+<td>
+rrn5
+</td>
+<td>
+76
+</td>
+<td>
+195
+</td>
+<td>
+-1
+</td>
+<td>
+120
+</td>
+<td>
+True
+</td>
+</tr>
+<tr>
+<td>
+rRNA
+</td>
+<td>
+rrn5
+</td>
+<td>
+105525
+</td>
+<td>
+105644
+</td>
+<td>
+1
+</td>
+<td>
+120
+</td>
+<td>
+True
+</td>
+</tr>
+<tr>
+<td>
+tRNA
+</td>
+<td>
+trnD-GUC
+</td>
+<td>
+61196
+</td>
+<td>
+61269
+</td>
+<td>
+-1
+</td>
+<td>
+74
+</td>
+<td>
+True
+</td>
+</tr>
+<tr>
+<td>
+tRNA
+</td>
+<td>
+trnD-GUC
+</td>
+<td>
+89126
+</td>
+<td>
+89199
+</td>
+<td>
+-1
+</td>
+<td>
+74
+</td>
+<td>
+True
+</td>
+</tr>
+<tr>
+<td>
+tRNA
+</td>
+<td>
+trnD-GUC
+</td>
+<td>
+120575
+</td>
+<td>
+120648
+</td>
+<td>
+-1
+</td>
+<td>
+74
+</td>
+<td>
+True
+</td>
+</tr>
+<tr>
+<td>
+tRNA
+</td>
+<td>
+trnI-CAU
+</td>
+<td>
+24638
+</td>
+<td>
+24710
+</td>
+<td>
+1
+</td>
+<td>
+73
+</td>
+<td>
+True
+</td>
+</tr>
+<tr>
+<td>
+tRNA
+</td>
+<td>
+trnI-CAU
+</td>
+<td>
+119792
+</td>
+<td>
+119863
+</td>
+<td>
+-1
+</td>
+<td>
+72
+</td>
+<td>
+False
+</td>
+</tr>
+<tr>
+<td>
+tRNA
+</td>
+<td>
+trnR-UCU
+</td>
+<td>
+40344
+</td>
+<td>
+40415
+</td>
+<td>
+1
+</td>
+<td>
+72
+</td>
+<td>
+True
+</td>
+</tr>
+<tr>
+<td>
+tRNA
+</td>
+<td>
+trnR-UCU
+</td>
+<td>
+102246
+</td>
+<td>
+102317
+</td>
+<td>
+1
+</td>
+<td>
+72
+</td>
+<td>
+True
+</td>
+</tr>
+<tr>
+<td>
+tRNA
+</td>
+<td>
+trnY-GUA
+</td>
+<td>
+28628
+</td>
+<td>
+28707
+</td>
+<td>
+-1
+</td>
+<td>
+80
+</td>
+<td>
+True
+</td>
+</tr>
+<tr>
+<td>
+tRNA
+</td>
+<td>
+trnY-GUA
+</td>
+<td>
+61506
+</td>
+<td>
+61589
+</td>
+<td>
+-1
+</td>
+<td>
+84
+</td>
+<td>
+False
+</td>
+</tr>
+</tbody>
+</table>
+<p>Leia a tabela como um mapa de hipóteses para a Sessão 2. Cópias idênticas em fitas opostas são candidatas a repetições invertidas curtas; cópias na mesma fita, a repetições diretas. Nos dois casos, o gene é só a parte anotada de uma repetição maior, e o tamanho e a posição dessa repetição só aparecem quando a procuramos na sequência inteira, por algoritmo.</p>
+</section>
+<section id="exercícios" class="level2" data-number="2.10">
+<h2 data-number="2.10" class="anchored" data-anchor-id="exercícios"><span class="header-section-number">2.10</span> Exercícios</h2>
+<ol type="1">
+<li><strong>Propriedade da involução.</strong> Escreva em <code>tests/</code> um teste que gere 1.000 sequências aleatórias e verifique que <code>rc(rc(s)) == s</code> e que <code>gc_percent(s) == gc_percent(rc(s))</code>. Explique, com a definição de <span class="math inline">\(c\)</span>, por que a segunda igualdade vale.</li>
+<li><strong>Barcodes para o Módulo 3.</strong> Extraia <em>rbcL</em> e <em>matK</em> deste registro com <code>feature.extract</code> e salve um FASTA em <code>03_dados/processados/plastomas/</code>. Confira o comprimento de cada um em códons.</li>
+<li><strong>Quem depositou?</strong> Abra o campo <code>REFERENCE</code> do arquivo <code>.gb</code> (ou <code>record.annotations["references"]</code>). O depósito <code>KY404932.1</code> corresponde ao trabalho de <span class="citation" data-cites="brandao2019araucaria">Brandão et al. (<a href="aula-01.html#ref-brandao2019araucaria" role="doc-biblioref">2019</a>)</span>? Registre a resposta no diário de bordo.</li>
+<li><strong>Teste uma afirmação publicada.</strong> A tabela de genes repetidos confirma que só <em>rrn5</em> e <em>trnI-CAU</em> aparecem em mais de uma cópia? Se não, investigue a nomenclatura (<code>/gene</code> versus <code>/product</code>) antes de concluir.</li>
+<li><strong>Comparação congenérica.</strong> Rode o script com <code>--accession NC_026450.1</code> (<em>Araucaria heterophylla</em>, usado como referência na montagem da araucária) e compare comprimento, GC e conteúdo gênico.</li>
+<li><strong>Complexidade.</strong> Mostre que <code>gc_janela</code> é <span class="math inline">\(O(n)\)</span> enquanto a versão ingênua é <span class="math inline">\(O(n\,w)\)</span>. Meça os dois com <code>timeit</code> para <span class="math inline">\(w = 1.000\)</span> no plastoma inteiro.</li>
+</ol>
+</section>
+<section id="referências" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="referências">Referências</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-brandao2019araucaria" class="csl-entry" role="listitem">
+Brandão, José Henrique S. G., Nureyev F. Rodrigues, Maria Eguiluz, Frank
+Guzman, and Rogerio Margis. 2019. <span>“<em>Araucaria Angustifolia</em>
+Chloroplast Genome Sequence and Its Relation to Other
+Araucariaceae.”</span> <em>Genetics and Molecular Biology</em> 42 (4).
+<a href="https://doi.org/10.1590/1678-4685-GMB-2018-0213">https://doi.org/10.1590/1678-4685-GMB-2018-0213</a>.
+</div>
+<div id="ref-cbol2009barcode" class="csl-entry" role="listitem">
+CBOL Plant Working Group. 2009. <span>“A <span>DNA</span> Barcode for
+Land Plants.”</span> <em>Proceedings of the National Academy of
+Sciences</em> 106 (31): 12794–97. <a href="https://doi.org/10.1073/pnas.0905845106">https://doi.org/10.1073/pnas.0905845106</a>.
+</div>
+<div id="ref-cock2009biopython" class="csl-entry" role="listitem">
+Cock, Peter J. A., Tiago Antao, Jeffrey T. Chang, et al. 2009.
+<span>“Biopython: Freely Available Python Tools for Computational
+Molecular Biology and Bioinformatics.”</span> <em>Bioinformatics</em> 25
+(11): 1422–23. <a href="https://doi.org/10.1093/bioinformatics/btp163">https://doi.org/10.1093/bioinformatics/btp163</a>.
+</div>
+<div id="ref-guo2014juniperus" class="csl-entry" role="listitem">
+Guo, Wenhu, Felix Grewe, Amie Cobo-Clark, et al. 2014.
+<span>“Predominant and Substoichiometric Isomers of the Plastid Genome
+Coexist Within <em>Juniperus</em> Plants and Have Shifted Multiple Times
+During Cupressophyte Evolution.”</span> <em>Genome Biology and
+Evolution</em> 6 (3): 580–90. <a href="https://doi.org/10.1093/gbe/evu046">https://doi.org/10.1093/gbe/evu046</a>.
+</div>
+<div id="ref-kans_eutils" class="csl-entry" role="listitem">
+Kans, Jonathan. 2010. <em>Entrez Programming Utilities Help</em>.
+National Center for Biotechnology Information (US). <a href="https://www.ncbi.nlm.nih.gov/books/NBK25501/">https://www.ncbi.nlm.nih.gov/books/NBK25501/</a>.
+</div>
+<div id="ref-ping2020cunninghamii" class="csl-entry" role="listitem">
+Ping, Jingyao, Xin Luo, Ming Zhu, et al. 2020. <span>“The Complete
+Chloroplast Genome of <em>Araucaria Cunninghamii</em>
+(Araucariaceae).”</span> <em>Mitochondrial DNA Part B</em>, ahead of
+print. <a href="https://doi.org/10.1080/23802359.2020.1787265">https://doi.org/10.1080/23802359.2020.1787265</a>.
+</div>
+<div id="ref-vieira2016retrophyllum" class="csl-entry" role="listitem">
+<span class="nocase">Vieira, Leila do Nascimento, Marcelo Rogalski,
+Helisson Faoro, et al.</span> 2016. <span>“The Plastome Sequence of the
+Endemic Amazonian Conifer, <em>Retrophyllum Piresii</em> (Silba)
+c.n.page, Reveals Different Recombination Events and Plastome
+Isoforms.”</span> <em>Tree Genetics &amp; Genomes</em> 12 (1). <a href="https://doi.org/10.1007/s11295-016-0968-0">https://doi.org/10.1007/s11295-016-0968-0</a>.
+</div>
+<div id="ref-wu2011conifer" class="csl-entry" role="listitem">
+Wu, Chung-Shien, Ya-Nan Wang, Chi-Yao Hsu, Ching-Ping Lin, and Shu-Miaw
+Chaw. 2011. <span>“Loss of Different Inverted Repeat Copies from the
+Chloroplast Genomes of Pinaceae and Cupressophytes and Influence of
+Heterotachy on the Evaluation of Gymnosperm Phylogeny.”</span>
+<em>Genome Biology and Evolution</em> 3: 1284–95. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3219958">https://pmc.ncbi.nlm.nih.gov/articles/PMC3219958</a>.
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copiada");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copiada");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/pedroluizskt\.github\.io\/bioinformatica-vegetal-sdm\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+      window.quartoDecorateExternalLinks = function (root) {
+     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+          if (!link.classList.contains('no-external-icon')) {
+          }
+        }
+      }
+      };
+      window.quartoDecorateExternalLinks(window.document);
+    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
+    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
+    const hideOnEscAndFocusOut = {
+      name: 'hideOnEscAndFocusOut',
+      defaultValue: true,
+      fn(instance) {
+        const dismiss = () => {
+          // A show scheduled by the trigger delay would otherwise reopen it
+          instance.clearDelayTimeouts();
+          instance.hide();
+        };
+        const onKeyDown = (event) => {
+          if (event.key !== 'Escape') {
+            return;
+          }
+          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
+          // except an open reveal.js slide menu, which Esc should close too.
+          // The menu handles keys only when its keyboard option is on.
+          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
+            window.Reveal.getConfig().menu?.keyboard !== false;
+          if (!menuHandlesEsc) {
+            event.stopPropagation();
+          }
+          if (instance.popper.contains(window.document.activeElement)) {
+            // Disabled while refocusing so the focus trigger does not reopen it
+            instance.disable();
+            instance.reference.focus();
+            instance.enable();
+          }
+          dismiss();
+        };
+        const onFocusOut = (event) => {
+          const target = event.relatedTarget;
+          if (target && !instance.reference.contains(target) &&
+              !instance.popper.contains(target)) {
+            dismiss();
+          }
+        };
+        // On the trigger too: a click trigger (code-annotations: select) has no
+        // blur handling. Attached for the instance's lifetime so leaving the
+        // trigger also cancels a show still pending on the trigger delay.
+        instance.reference.addEventListener('focusout', onFocusOut);
+        return {
+          onShow() {
+            window.document.addEventListener('keydown', onKeyDown, true);
+            instance.popper.addEventListener('focusout', onFocusOut);
+          },
+          onHide() {
+            window.document.removeEventListener('keydown', onKeyDown, true);
+            instance.popper.removeEventListener('focusout', onFocusOut);
+          },
+          onDestroy() {
+            instance.reference.removeEventListener('focusout', onFocusOut);
+          },
+        };
+      },
+    };
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+        plugins: [hideOnEscAndFocusOut],
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          // Each band is positioned against its own containing block, which is
+          // not the offsetParent of the lines, so place it from client rects.
+          const placeBand = (band, firstEl, lastEl, codeBlock) => {
+            const container = band.offsetParent;
+            if (container === null) {
+              return;
+            }
+            const containerRect = container.getBoundingClientRect();
+            // Reveal.js scales slides with a transform, so convert client
+            // pixels back to the CSS pixels of the container.
+            const scale = containerRect.height / container.offsetHeight || 1;
+            const firstRect = firstEl.getBoundingClientRect();
+            const lastRect = lastEl.getBoundingClientRect();
+            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
+            const height = (lastRect.bottom - firstRect.top) / scale;
+            band.style.top = top - 2 + "px";
+            band.style.height = height + 4 + "px";
+            if (codeBlock) {
+              // Without the copy button wrapper, the containing block is wider
+              // than the code block, so span the code block explicitly.
+              const blockRect = codeBlock.getBoundingClientRect();
+              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
+              band.style.width = blockRect.width / scale + "px";
+            }
+          };
+          if (lineIds.length > 0) {
+            const el = window.document.getElementById(lineIds[0]);
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const parent = el.parentElement.parentElement;
+            // cook up a div (if necessary) and position it
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            placeBand(gutterDiv, el, lastEl);
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+  <script type="application/javascript">
+  window.quartoScrollableRegionsLabels = {"code":"Código deslocável","output":"Saída deslocável"};
+  </script>
+<nav class="page-navigation" aria-label="Página">
+  <div class="nav-page nav-page-previous">
+      <a href="../../modulos/m00-setup/aula-00.html" class="pagination-link" aria-label="Aula 0 - Ambiente reprodutível em 8 GB de RAM">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Aula 0 - Ambiente reprodutível em 8 GB de RAM</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/PedroLuizskt/bioinformatica-vegetal-sdm/blob/main/modulos/m01-sequencias-ocorrencias/aula-01.qmd" class="toc-action"><i class="bi bi-github"></i>Ver o código fonte</a></li><li><a href="https://github.com/PedroLuizskt/bioinformatica-vegetal-sdm/issues/new" class="toc-action"><i class="bi empty"></i>Criar uma issue</a></li></ul></div></div></div></footer></body></html>

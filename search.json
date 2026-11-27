@@ -1,0 +1,242 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Bioinformática Vegetal e Modelagem de Distribuição de Espécies",
+    "section": "",
+    "text": "Apresentação\nEsta apostila acompanha uma trilha de estudos de nível de pós-graduação que integra dois pilares:\nCada capítulo é uma nota de aula: fundamentação teórica (o porquê biológico, matemático e estatístico), laboratório prático reprodutível e exercícios de fixação. Todo o código foi escrito para rodar em um notebook com 8 GB de RAM e sem GPU.",
+    "crumbs": [
+      "Apresentação"
+    ]
+  },
+  {
+    "objectID": "index.html#como-reproduzir",
+    "href": "index.html#como-reproduzir",
+    "title": "Bioinformática Vegetal e Modelagem de Distribuição de Espécies",
+    "section": "Como reproduzir",
+    "text": "Como reproduzir\nO ambiente é descrito por requirements.lock.txt (Python) e renv.lock (R). A configuração completa está no capítulo da Aula 0.\n# a partir de 01_estudos\nquarto render",
+    "crumbs": [
+      "Apresentação"
+    ]
+  },
+  {
+    "objectID": "modulos/m00-setup/aula-00.html",
+    "href": "modulos/m00-setup/aula-00.html",
+    "title": "1  Aula 0 - Ambiente reprodutível em 8 GB de RAM",
+    "section": "",
+    "text": "1.1 Objetivos da aula\nAo final desta aula o ambiente deve:",
+    "crumbs": [
+      "Módulo 0 - Setup e arquitetura",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Aula 0 - Ambiente reprodutível em 8 GB de RAM</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m00-setup/aula-00.html#objetivos-da-aula",
+    "href": "modulos/m00-setup/aula-00.html#objetivos-da-aula",
+    "title": "1  Aula 0 - Ambiente reprodutível em 8 GB de RAM",
+    "section": "",
+    "text": "rodar Python e R isolados do sistema, com versões travadas em arquivo;\nimpor, por código e não por disciplina, um teto de threads (4) e de memória;\npermitir que R e Python coexistam no mesmo documento Quarto;\npassar nos testes de fumaça scripts/smoke_test.py e scripts/smoke_test.R.",
+    "crumbs": [
+      "Módulo 0 - Setup e arquitetura",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Aula 0 - Ambiente reprodutível em 8 GB de RAM</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m00-setup/aula-00.html#fundamentação-por-que-o-ambiente-é-parte-do-método",
+    "href": "modulos/m00-setup/aula-00.html#fundamentação-por-que-o-ambiente-é-parte-do-método",
+    "title": "1  Aula 0 - Ambiente reprodutível em 8 GB de RAM",
+    "section": "1.2 Fundamentação: por que o ambiente é parte do método",
+    "text": "1.2 Fundamentação: por que o ambiente é parte do método\nUm resultado de SDM ou uma filogenia é função dos dados, do algoritmo e das versões do software. Uma mudança de versão do maxnet, do terra ou do alinhador pode alterar previsões e topologias sem nenhum erro visível. Por isso o ambiente é tratado como artefato científico, em três camadas:\n\n\n\n\n\n\n\n\n\nCamada\nPython\nR\nO que garante\n\n\n\n\nIsolamento\n.venv\nbiblioteca do projeto (renv/library)\no projeto não depende do que está instalado no sistema\n\n\nIntenção\nrequirements/base.txt\nlista em R/01_instalar_pacotes.R\nquais pacotes e versões mínimas o projeto exige\n\n\nTrava\nrequirements.lock.txt\nrenv.lock\na versão exata de cada pacote, inclusive dependências\n\n\n\nO renv mantém um cache global e liga cada biblioteca de projeto a ele; por isso dezenas de projetos R custam pouco disco. O venv não tem esse mecanismo: cada ambiente Python ocupa algumas centenas de MB.",
+    "crumbs": [
+      "Módulo 0 - Setup e arquitetura",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Aula 0 - Ambiente reprodutível em 8 GB de RAM</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m00-setup/aula-00.html#fundamentação-o-modelo-de-memória-que-vamos-respeitar",
+    "href": "modulos/m00-setup/aula-00.html#fundamentação-o-modelo-de-memória-que-vamos-respeitar",
+    "title": "1  Aula 0 - Ambiente reprodutível em 8 GB de RAM",
+    "section": "1.3 Fundamentação: o modelo de memória que vamos respeitar",
+    "text": "1.3 Fundamentação: o modelo de memória que vamos respeitar\nA máquina tem 7,73 GB utilizáveis, dos quais o Windows, o VS Code e o navegador consomem de 2,5 a 3,5 GB. Sobram de 4 a 5 GB por processo de análise. Três fatos técnicos determinam as regras de engenharia da trilha.\n1. Raster global não cabe em memória. Uma camada WorldClim de 30 segundos de arco tem 43.200 × 21.600 células. Em float32:\n\ncelulas &lt;- 43200 * 21600\ngb_por_camada &lt;- celulas * 4 / 1024^3\nc(gb_por_camada = round(gb_por_camada, 2),\n  gb_19_bioclim = round(19 * gb_por_camada, 1))\n\ngb_por_camada gb_19_bioclim \n         3.48         66.00 \n\n\nAs 19 variáveis bioclimáticas globais somariam mais de 60 GB. O terra resolve isso lendo em blocos do disco e gravando resultados intermediários em arquivos temporários; nosso papel é recortar para a área de estudo antes de extrair tabelas e limitar a fração de RAM que ele pode usar.\n2. No Windows, paralelismo multiplica memória. Não existe fork. Um cluster PSOCK do R ou um multiprocessing com spawn no Python sobe processos novos que reimportam pacotes e recebem cópias dos dados. Quatro workers com 1 GB de dados cada são 4 GB além da sessão principal.\n3. Bibliotecas numéricas criam threads por conta própria. O BLAS do NumPy e o OpenMP usam, por padrão, todos os 12 threads lógicos do i5-1235U. Isso disputa CPU com o próprio paralelismo explícito e aumenta a memória de trabalho.",
+    "crumbs": [
+      "Módulo 0 - Setup e arquitetura",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Aula 0 - Ambiente reprodutível em 8 GB de RAM</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m00-setup/aula-00.html#como-as-regras-viraram-código",
+    "href": "modulos/m00-setup/aula-00.html#como-as-regras-viraram-código",
+    "title": "1  Aula 0 - Ambiente reprodutível em 8 GB de RAM",
+    "section": "1.4 Como as regras viraram código",
+    "text": "1.4 Como as regras viraram código\n\n\n\n\n\n\n\n\nRegra\nMecanismo\nOnde está\n\n\n\n\nTeto de 4 threads\nvariáveis OMP_NUM_THREADS, OPENBLAS_NUM_THREADS, MKL_NUM_THREADS\n.env, .Renviron e bioflora.recursos.aplicar_limites_threads()\n\n\nterra com no máximo 4 GB e metade da RAM livre\nterraOptions(memfrac = 0.5, memmax = 4) registrado nos eventos onLoad e attach do pacote via setHook(packageEvent(...))\nbloco no .Rprofile\n\n\nTemporários do terra em pasta descartável\nterraOptions(tempdir = BIOINFO_TMP_TERRA) + terra::tmpFiles(remove = TRUE)\n.Rprofile e 05_scratch/tmp_terra\n\n\nDuckDB com teto e spill em disco\nmemory_limit, threads, temp_directory, preserve_insertion_order = false\nbioflora.recursos.conectar_duckdb()\n\n\nAlarme de RAM\nRSS do processo contra teto de 4,5 GB\nbioflora.recursos.log_memoria()\n\n\nEditor leve\nPylance sem indexação global; pastas de dados fora do file watcher\n.vscode/settings.json\n\n\n\n\n\n\n\n\n\nNotaPor que dois ganchos para o terra\n\n\n\nO terra recria suas opções internas no .onAttach, que o R executa depois dos ganchos de onLoad. Um gancho só em onLoad é silenciosamente desfeito por library(terra). Registrar a mesma função também no evento attach reaplica os limites depois do .onAttach; o onLoad continua cobrindo o uso apenas com terra::funcao(). Esse comportamento foi verificado empiricamente no teste de fumaça, que confere memmax e tempdir depois de carregar o pacote.\n\n\n\n\n\n\n\n\nImportanteOrdem de importação no Python\n\n\n\nimport bioflora deve vir antes de import numpy em scripts pesados. O BLAS lê as variáveis de threads no momento em que é carregado; depois disso, mudar os.environ não tem efeito.",
+    "crumbs": [
+      "Módulo 0 - Setup e arquitetura",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Aula 0 - Ambiente reprodutível em 8 GB de RAM</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m00-setup/aula-00.html#verificação-r-e-python-no-mesmo-documento",
+    "href": "modulos/m00-setup/aula-00.html#verificação-r-e-python-no-mesmo-documento",
+    "title": "1  Aula 0 - Ambiente reprodutível em 8 GB de RAM",
+    "section": "1.5 Verificação: R e Python no mesmo documento",
+    "text": "1.5 Verificação: R e Python no mesmo documento\nO bloco R confirma que o renv está ativo e que o gancho do terra funcionou.\n\nlibrary(terra)\nopt &lt;- terraOptions(print = FALSE)\ndata.frame(\n  item  = c(\"R\", \"biblioteca ativa\", \"terra memmax (GB)\", \"terra memfrac\", \"terra tempdir\"),\n  valor = c(R.version.string, .libPaths()[1], opt$memmax, opt$memfrac, opt$tempdir)\n)\n\n               item\n1                 R\n2  biblioteca ativa\n3 terra memmax (GB)\n4     terra memfrac\n5     terra tempdir\n                                                                                            valor\n1                                                               R version 4.6.2 (2026-10-29 ucrt)\n2 C:/Users/pedro/Downloads/bioinformatic/01_estudos/renv/library/windows/R-4.6/x86_64-w64-mingw32\n3                                                                                               4\n4                                                                                             0.5\n5                                     C:/Users/pedro/Downloads/bioinformatic/05_scratch/tmp_terra\n\n\nO bloco Python roda pelo reticulate, usando o interpretador do .venv definido em RETICULATE_PYTHON.\n\nimport sys\n\nimport bioflora\nfrom Bio.Seq import Seq\n\ntrecho = Seq(\"ATGTCACCACAAACAGAGACTAAAGCA\")\nprint(\"Python:\", sys.executable)\n\nPython: C:\\Users\\pedro\\DOWNLO~1\\BIOINF~1\\01_EST~1\\VENV~1\\Scripts\\python.exe\n\nprint(\"bioflora:\", bioflora.__version__)\n\nbioflora: 0.1.0\n\nprint(\"Tradução (tabela 11):\", trecho.translate(table=11))\n\nTradução (tabela 11): MSPQTETKA",
+    "crumbs": [
+      "Módulo 0 - Setup e arquitetura",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Aula 0 - Ambiente reprodutível em 8 GB de RAM</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m00-setup/aula-00.html#exercícios-de-fixação",
+    "href": "modulos/m00-setup/aula-00.html#exercícios-de-fixação",
+    "title": "1  Aula 0 - Ambiente reprodutível em 8 GB de RAM",
+    "section": "1.6 Exercícios de fixação",
+    "text": "1.6 Exercícios de fixação\n\nCalcule a memória, em GB, de um recorte das 19 variáveis bioclimáticas de 30 segundos de arco para Minas Gerais (cerca de 11,3° × 8,8°). Cabe com folga no teto de 4 GB?\nExplique por que terra::predict(..., cores = 4) pode ser mais lento e mais caro em memória do que cores = 1 com filename = em disco, no Windows.\nEm um script, importe numpy antes de bioflora e observe a mensagem [AVISO]. Por que o teto de threads pode não valer nessa sessão?",
+    "crumbs": [
+      "Módulo 0 - Setup e arquitetura",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Aula 0 - Ambiente reprodutível em 8 GB de RAM</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m00-setup/aula-00.html#checklist-de-saída",
+    "href": "modulos/m00-setup/aula-00.html#checklist-de-saída",
+    "title": "1  Aula 0 - Ambiente reprodutível em 8 GB de RAM",
+    "section": "1.7 Checklist de saída",
+    "text": "1.7 Checklist de saída\n\npython scripts/smoke_test.py termina com [OK] ambiente Python pronto\npython -m pytest passa\nRscript scripts/smoke_test.R termina com [OK] ambiente R pronto\nquarto render modulos/m00-setup/aula-00.qmd gera o HTML desta nota\nNCBI_EMAIL preenchido no .env",
+    "crumbs": [
+      "Módulo 0 - Setup e arquitetura",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Aula 0 - Ambiente reprodutível em 8 GB de RAM</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m01-sequencias-ocorrencias/aula-01.html",
+    "href": "modulos/m01-sequencias-ocorrencias/aula-01.html",
+    "title": "2  Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez",
+    "section": "",
+    "text": "2.1 Objetivos\nAo final desta aula você deve saber:",
+    "crumbs": [
+      "Módulo 1 - Sequências e ocorrências como dados",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m01-sequencias-ocorrencias/aula-01.html#objetivos",
+    "href": "modulos/m01-sequencias-ocorrencias/aula-01.html#objetivos",
+    "title": "2  Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez",
+    "section": "",
+    "text": "tratar uma sequência como objeto matemático e manipular Seq, SeqRecord e SeqFeature;\nconverter coordenadas do GenBank (base 1, fechado) para Python (base 0, semiaberto) sem errar por um;\nexplicar por que traduzir o DNA de um plastídio não reproduz, necessariamente, a proteína anotada;\nconsultar o NCBI pelo Entrez com identificação, servidor de histórico, cache e proveniência;\ntransformar um registro GenBank em tabelas Parquet prontas para análise.",
+    "crumbs": [
+      "Módulo 1 - Sequências e ocorrências como dados",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m01-sequencias-ocorrencias/aula-01.html#por-que-começar-pelo-plastoma",
+    "href": "modulos/m01-sequencias-ocorrencias/aula-01.html#por-que-começar-pelo-plastoma",
+    "title": "2  Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez",
+    "section": "2.2 Por que começar pelo plastoma",
+    "text": "2.2 Por que começar pelo plastoma\nO genoma do cloroplasto é o genoma de trabalho da sistemática e da filogeografia vegetal: herança uniparental, praticamente sem recombinação, centenas de cópias por célula e genes muito conservados. Os marcadores centrais do DNA barcoding de plantas, rbcL e matK, estão nele (CBOL Plant Working Group 2009). Na maioria das plantas terrestres o plastoma tem 120–160 kb e uma estrutura quadripartida: uma região grande de cópia única (LSC), uma pequena (SSC) e duas repetições invertidas (IRa e IRb) que as separam.\n\n\n\n\n\n\nImportanteA araucária quebra a regra de livro\n\n\n\nConíferas perderam uma das cópias da repetição invertida, e Pinaceae e as demais coníferas (cupressófitas, que incluem Araucariaceae) perderam cópias diferentes (Wu et al. 2011). No plastoma de Araucaria angustifolia, a organização LSC/SSC/IRa/IRb não está presente e os genes que ficariam na IR aparecem em cópia única, com exceção de rrn5 e trnI-CAU (Brandão et al. 2019). Começar por uma exceção é proposital: ela obriga a medir em vez de presumir. Na Sessão 2 vamos detectar repetições invertidas por algoritmo e comparar a araucária com um ipê, que tem a estrutura canônica.",
+    "crumbs": [
+      "Módulo 1 - Sequências e ocorrências como dados",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m01-sequencias-ocorrencias/aula-01.html#a-sequência-como-objeto-matemático",
+    "href": "modulos/m01-sequencias-ocorrencias/aula-01.html#a-sequência-como-objeto-matemático",
+    "title": "2  Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez",
+    "section": "2.3 A sequência como objeto matemático",
+    "text": "2.3 A sequência como objeto matemático\nUma molécula de DNA de fita simples, lida de 5’ para 3’, é uma palavra sobre o alfabeto \\(\\Sigma = \\{A, C, G, T\\}\\), isto é, \\(s = s_1 s_2 \\dots s_n \\in \\Sigma^n\\). Dados reais usam também os códigos de ambiguidade da IUPAC (N para qualquer base, R para A/G etc.).\nA fita complementar é obtida pela função de complemento \\(c\\), com \\(c(A)=T\\), \\(c(C)=G\\) e vice-versa. Como as fitas são antiparalelas, a sequência da fita oposta, lida também de 5’ para 3’, é o complemento reverso:\n\\[\n\\mathrm{rc}(s)_i = c\\left(s_{n+1-i}\\right), \\qquad i = 1, \\dots, n.\n\\]\n\\(\\mathrm{rc}\\) é uma involução: \\(\\mathrm{rc}(\\mathrm{rc}(s)) = s\\). É isso que o atributo strand codifica: um gene na fita \\(-1\\) é lido aplicando \\(\\mathrm{rc}\\) ao trecho da fita \\(+1\\) que o GenBank armazena. Em Biopython, Seq guarda a sequência como bytes, SeqRecord adiciona identificador, anotações e a lista de SeqFeature, e cada SeqFeature tem um tipo (CDS, tRNA…), qualificadores (/gene, /product…) e uma localização.",
+    "crumbs": [
+      "Módulo 1 - Sequências e ocorrências como dados",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m01-sequencias-ocorrencias/aula-01.html#coordenadas-o-erro-de-um-que-todo-bioinformata-comete",
+    "href": "modulos/m01-sequencias-ocorrencias/aula-01.html#coordenadas-o-erro-de-um-que-todo-bioinformata-comete",
+    "title": "2  Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez",
+    "section": "2.4 Coordenadas: o erro de um que todo bioinformata comete",
+    "text": "2.4 Coordenadas: o erro de um que todo bioinformata comete\nO GenBank numera a partir de 1 e usa intervalos fechados; Python numera a partir de 0 e usa intervalos semiabertos. A mesma região é escrita assim nos dois sistemas:\n\\[\n[a\\,..\\,b]_{\\text{GenBank}} \\;=\\; [\\,a-1,\\; b\\,)_{\\text{Python}}, \\qquad\n\\text{comprimento} = b - a + 1 = \\text{end} - \\text{start}.\n\\]\nO intervalo semiaberto não é capricho: o comprimento é a diferença direta das pontas, e \\([i, j) \\cup [j, k) = [i, k)\\) sem sobreposição, o que elimina uma classe inteira de erros ao fatiar e concatenar. Localizações compostas (join(...), complement(join(...))) representam genes com íntrons, genes na fita negativa e, em genomas circulares, genes que atravessam a origem da numeração. feature.extract(seq) resolve tudo isso e devolve o gene na orientação 5’→3’; len(feature.location) soma só as partes, sem os íntrons.\n\nrbcl = next(\n    (\n        f for f in record.features\n        if f.type == \"CDS\" and f.qualifiers.get(\"gene\", [\"\"])[0] == \"rbcL\"\n    ),\n    None,\n)\nif rbcl is None:\n    print(\"rbcL nao anotado com /gene=rbcL neste registro\")\nelse:\n    inicio, fim = coordenadas_genbank(rbcl)\n    n = len(rbcl.location)\n    print(f\"Localizacao Biopython   : {rbcl.location}\")\n    print(f\"GenBank (base 1)        : {inicio}..{fim}\")\n    print(f\"Fatia Python            : record.seq[{inicio - 1}:{fim}]\")\n    print(f\"Comprimento             : {n} pb = {n // 3} codons\")\n    print(f\"Primeiros 30 nt (5'-&gt;3'): {rbcl.extract(record.seq)[:30]}\")\n\nLocalizacao Biopython   : [87561:88989](+)\nGenBank (base 1)        : 87562..88989\nFatia Python            : record.seq[87561:88989]\nComprimento             : 1428 pb = 476 codons\nPrimeiros 30 nt (5'-&gt;3'): ATGTCACCAAAAACAGAAACTAAAACAGGT",
+    "crumbs": [
+      "Módulo 1 - Sequências e ocorrências como dados",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m01-sequencias-ocorrencias/aula-01.html#o-código-genético-como-função-e-por-que-o-dna-não-é-a-proteína",
+    "href": "modulos/m01-sequencias-ocorrencias/aula-01.html#o-código-genético-como-função-e-por-que-o-dna-não-é-a-proteína",
+    "title": "2  Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez",
+    "section": "2.5 O código genético como função, e por que o DNA não é a proteína",
+    "text": "2.5 O código genético como função, e por que o DNA não é a proteína\nO código genético é uma função \\(g: \\Sigma^3 \\to \\mathcal{A} \\cup \\{*\\}\\) dos 64 códons nos 20 aminoácidos mais o sinal de parada. Ela é sobrejetora e muito redundante, e não é única: o NCBI mantém várias tabelas. Plastídios usam a tabela 11, que traduz como a padrão mas aceita mais códons de início:\n\nt11 = CodonTable.unambiguous_dna_by_id[11]\nprint(f\"Tabela {t11.id}: {t11.names[0]}\")\n\nTabela 11: Bacterial\n\nprint(\"Codons de inicio:\", \", \".join(sorted(t11.start_codons)))\n\nCodons de inicio: ATA, ATC, ATG, ATT, CTG, GTG, TTG\n\nprint(\"Codons de parada:\", \", \".join(sorted(t11.stop_codons)))\n\nCodons de parada: TAA, TAG, TGA\n\n\nMesmo com a tabela certa, traduzir o DNA de um plastídio nem sempre reproduz a proteína. Plantas fazem edição de RNA: depois da transcrição, citidinas específicas viram uridinas (C→U), o que pode criar um códon de início onde o DNA tem ACG, ou trocar um aminoácido no meio da proteína. Por isso a anotação /translation de um registro pode divergir em poucas posições da tradução direta do DNA, e essa divergência é informação biológica, não ruído.\nA validação desta aula usa translate(table=11, cds=True), que exige códon de início válido, comprimento múltiplo de 3, um único stop no fim e nenhum stop interno, e depois compara com /translation contando as posições diferentes (distância de Hamming).",
+    "crumbs": [
+      "Módulo 1 - Sequências e ocorrências como dados",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m01-sequencias-ocorrencias/aula-01.html#ncbi-entrez-feito-do-jeito-certo",
+    "href": "modulos/m01-sequencias-ocorrencias/aula-01.html#ncbi-entrez-feito-do-jeito-certo",
+    "title": "2  Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez",
+    "section": "2.6 NCBI Entrez feito do jeito certo",
+    "text": "2.6 NCBI Entrez feito do jeito certo\n\n\n\n\n\n\nflowchart LR\n  T[\"termo de busca\"] --&gt; S[\"ESearch&lt;br/&gt;usehistory=y\"]\n  S --&gt; H[\"WebEnv + query_key&lt;br/&gt;(servidor de histórico)\"]\n  H --&gt; F[\"EFetch em lotes&lt;br/&gt;rettype=gb\"]\n  F --&gt; C[\"cache local&lt;br/&gt;accession.version + .json\"]\n  C --&gt; P[\"SeqIO.read / parse\"]\n\n\n\n\n\n\nAs E-utilities do NCBI se combinam em cadeia: ESearch transforma um termo em UIDs, ESummary traz resumos, EFetch traz os registros completos e ELink atravessa bancos (Kans 2010). Para conjuntos grandes, o servidor de histórico guarda o resultado da busca no próprio NCBI e devolve um par WebEnv/query_key, que permite baixar tudo em lotes sem reenviar listas de milhares de identificadores.\nQuatro regras de conduta, todas aplicadas em bioflora.ncbi:\n\nIdentificação. O NCBI exige um email (Entrez.email); com chave de API o limite sobe de 3 para 10 requisições por segundo. O Biopython já respeita esse limite e repete falhas transitórias sozinho (Cock et al. 2009), então não reimplementamos isso.\nAccession com versão. KY404932.1 é imutável; KY404932 aponta para a revisão mais recente e pode mudar. Análise reprodutível cita sempre accession.version.\nCache. Baixar uma vez, ler do disco sempre. O arquivo fica em 03_dados/brutos/ncbi/, com um .json de proveniência (data UTC, tamanho, SHA-256).\nValidação. O NCBI pode devolver texto de erro com HTTP 200; o conteúdo só vira cache se começar com a assinatura do formato (LOCUS para GenBank).",
+    "crumbs": [
+      "Módulo 1 - Sequências e ocorrências como dados",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m01-sequencias-ocorrencias/aula-01.html#memória-ler-iterar-ou-indexar",
+    "href": "modulos/m01-sequencias-ocorrencias/aula-01.html#memória-ler-iterar-ou-indexar",
+    "title": "2  Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez",
+    "section": "2.7 Memória: ler, iterar ou indexar",
+    "text": "2.7 Memória: ler, iterar ou indexar\n\n\n\n\n\n\n\n\nFunção\nO que faz\nQuando usar\n\n\n\n\nSeqIO.read(arq, fmt)\ncarrega exatamente um registro\num plastoma, um gene\n\n\nSeqIO.parse(arq, fmt)\niterador: um registro por vez\narquivos multi-registro processados em fluxo\n\n\nSeqIO.index(arq, fmt)\ndicionário de offsets no disco\nacesso aleatório a arquivos grandes sem carregá-los\n\n\n\nUm plastoma de ~146 kb ocupa ~146 KB como bytes: cabe com folga. A disciplina importa quando o arquivo tem milhares de registros ou genomas nucleares: aí parse e index mantêm a memória constante.",
+    "crumbs": [
+      "Módulo 1 - Sequências e ocorrências como dados",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m01-sequencias-ocorrencias/aula-01.html#laboratório",
+    "href": "modulos/m01-sequencias-ocorrencias/aula-01.html#laboratório",
+    "title": "2  Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez",
+    "section": "2.8 Laboratório",
+    "text": "2.8 Laboratório\nNo terminal, a partir de 01_estudos com o .venv ativo:\npython scripts/m01_s01_plastoma.py\nO script busca os plastomas da espécie com histórico, baixa KY404932.1 para o cache (só na primeira vez), grava a tabela de anotações e a validação das CDS em 03_dados/processados/plastomas/ e imprime um resumo com marcadores [OK]/[AVISO].\n\n2.8.1 O registro\nr = resumo_registro(record)\nprov = ler_proveniencia(ARQ_GB)\nlinhas = [\n    (\"Accession\", r[\"accession\"]),\n    (\"Organismo\", r[\"organismo\"]),\n    (\"Descrição\", r[\"descricao\"]),\n    (\"Topologia / molécula\", f\"{r['topologia']} / {r['molecula']}\"),\n    (\"Comprimento\", f\"{r['comprimento_pb']:,} pb\".replace(\",\", \".\")),\n    (\"GC global\", f\"{r['gc_pct']}%\".replace(\".\", \",\")),\n    (\"Genes únicos (CDS, tRNA, rRNA)\", \", \".join(str(v) for v in r[\"genes_unicos\"].values())),\n    (\"Baixado em (UTC)\", prov.get(\"baixado_em_utc\", \"-\")),\n]\ntabela(pd.DataFrame(linhas, columns=[\"Campo\", \"Valor\"]))\n\n\n\n\nCampo\n\n\nValor\n\n\n\n\n\n\nAccession\n\n\nKY404932.1\n\n\n\n\nOrganismo\n\n\nAraucaria angustifolia\n\n\n\n\nDescrição\n\n\nAraucaria angustifolia chloroplast, complete genome\n\n\n\n\nTopologia / molécula\n\n\ncircular / DNA\n\n\n\n\nComprimento\n\n\n145.558 pb\n\n\n\n\nGC global\n\n\n36,59%\n\n\n\n\nGenes únicos (CDS, tRNA, rRNA)\n\n\n82, 32, 4\n\n\n\n\nBaixado em (UTC)\n\n\n2026-11-23T23:24:12+00:00\n\n\n\n\n\n\n2.8.2 Conteúdo gênico por tipo\npor_tipo = (\n    feats[feats[\"tipo\"].isin([\"CDS\", \"tRNA\", \"rRNA\"])]\n    .groupby(\"tipo\")\n    .agg(\n        anotacoes=(\"gene\", \"size\"),\n        genes_unicos=(\"gene\", \"nunique\"),\n        comprimento_medio_pb=(\"comprimento\", \"mean\"),\n        gc_medio_pct=(\"gc_pct\", \"mean\"),\n    )\n    .round(1)\n    .reset_index()\n)\ntabela(por_tipo)\n\n\n\n\ntipo\n\n\nanotacoes\n\n\ngenes_unicos\n\n\ncomprimento_medio_pb\n\n\ngc_medio_pct\n\n\n\n\n\n\nCDS\n\n\n82\n\n\n82\n\n\n907.1\n\n\n38.4\n\n\n\n\nrRNA\n\n\n5\n\n\n4\n\n\n921.8\n\n\n52.3\n\n\n\n\ntRNA\n\n\n37\n\n\n32\n\n\n75.2\n\n\n54.0\n\n\n\n\nGenes anotados em mais de uma cópia:\nrep = genes_repetidos(record)\ntabela(rep if not rep.empty else pd.DataFrame({\"resultado\": [\"nenhum gene repetido\"]}))\n\n\n\n\ntipo\n\n\ngene\n\n\ncopias\n\n\n\n\n\n\nrRNA\n\n\nrrn5\n\n\n2\n\n\n\n\ntRNA\n\n\ntrnD-GUC\n\n\n3\n\n\n\n\ntRNA\n\n\ntrnI-CAU\n\n\n2\n\n\n\n\ntRNA\n\n\ntrnR-UCU\n\n\n2\n\n\n\n\ntRNA\n\n\ntrnY-GUA\n\n\n2\n\n\n\n\n\n\n2.8.3 Mapa linear e composição\n\nimport matplotlib.pyplot as plt\n\nSUPERFICIE, TEXTO, TEXTO_2 = \"#fcfcfb\", \"#0b0b0b\", \"#52514e\"\nCORES = {\"CDS\": \"#2a78d6\", \"tRNA\": \"#eb6834\", \"rRNA\": \"#1baf7a\"}\n\nfig, (ax_genes, ax_gc) = plt.subplots(\n    2, 1, figsize=(10, 4.4), sharex=True, gridspec_kw={\"height_ratios\": [1.1, 1]}\n)\nfig.patch.set_facecolor(SUPERFICIE)\nfor tipo, cor in CORES.items():\n    for f in record.features:\n        if f.type != tipo:\n            continue\n        for parte in f.location.parts:\n            y = 0.5 if (parte.strand or 1) &gt; 0 else -0.5\n            ax_genes.broken_barh(\n                [(int(parte.start) / 1000, len(parte) / 1000)],\n                (y - 0.32, 0.64), facecolors=cor, edgecolor=\"none\",\n            )\n    ax_genes.plot([], [], color=cor, linewidth=6, label=tipo)\nax_genes.set_yticks([0.5, -0.5], [\"fita +\", \"fita -\"], color=TEXTO_2)\nax_genes.set_ylim(-1, 1)\n\n(-1.0, 1.0)\n\nax_genes.legend(\n    loc=\"lower right\", bbox_to_anchor=(1.0, 1.0), ncols=3, frameon=False, fontsize=9\n)\n\ncentros, gc = gc_janela(record.seq, janela=1000, passo=250)\nax_gc.plot(centros / 1000, gc, color=TEXTO_2, linewidth=1.2)\nax_gc.axhline(r[\"gc_pct\"], color=TEXTO, linewidth=1, linestyle=\"--\")\nax_gc.set_ylabel(\"GC (%)\", color=TEXTO_2)\nax_gc.set_xlabel(\"posição no plastoma (kb)\", color=TEXTO_2)\n\nfor ax in (ax_genes, ax_gc):\n    ax.set_facecolor(SUPERFICIE)\n    ax.tick_params(colors=TEXTO_2, labelsize=9)\n    for lado in (\"top\", \"right\"):\n        ax.spines[lado].set_visible(False)\n    for lado in (\"left\", \"bottom\"):\n        ax.spines[lado].set_color(\"#d9d8d4\")\nax_gc.grid(axis=\"y\", color=\"#ecebe8\", linewidth=0.8)\nax_gc.set_xlim(0, len(record.seq) / 1000)\n\n(0.0, 145.558)\n\nfig.tight_layout()\nplt.show()\n\n\n\n\n\n\n\nFigura 2.1: Genes por fita ao longo do plastoma (acima) e GC em janelas de 1 kb com passo de 250 pb (abaixo). A linha tracejada marca o GC global.\n\n\n\n\n\n\n\n2.8.4 Validação das proteínas anotadas\ndiverge = val[\"confere_anotacao\"].eq(False).fillna(False)\nresumo_val = pd.DataFrame(\n    [\n        (\"CDS anotadas\", len(val)),\n        (\"Válidas pela tabela 11 (cds=True)\", int(val[\"cds_valida\"].sum())),\n        (\"Com /translation\", int(val[\"tem_anotacao\"].sum())),\n        (\"Tradução idêntica à anotação\", int(val[\"confere_anotacao\"].fillna(False).sum())),\n        (\"Divergem da anotação\", int(diverge.sum())),\n    ],\n    columns=[\"Verificação\", \"CDS\"],\n)\ntabela(resumo_val)\n\n\n\n\nVerificação\n\n\nCDS\n\n\n\n\n\n\nCDS anotadas\n\n\n82\n\n\n\n\nVálidas pela tabela 11 (cds=True)\n\n\n82\n\n\n\n\nCom /translation\n\n\n82\n\n\n\n\nTradução idêntica à anotação\n\n\n82\n\n\n\n\nDivergem da anotação\n\n\n0\n\n\n\n\nCDS que merecem um olhar de biólogo (inválidas pela tabela 11 ou divergentes da anotação):\nsuspeitas = val[(~val[\"cds_valida\"]) | diverge][\n    [\"gene\", \"comprimento_nt\", \"codon_inicio\", \"stops_internos\", \"diferencas_aa\", \"motivo\"]\n]\ntabela(suspeitas if not suspeitas.empty else pd.DataFrame({\"resultado\": [\"nenhuma\"]}))\n\n\n\n\nresultado\n\n\n\n\n\n\nnenhuma\n\n\n\n\nAntes de concluir qualquer coisa, leia cada linha com três hipóteses em mente: edição de RNA (poucas diferenças, códon ACG no início), anotação herdada de outra espécie por transferência automática, e erro de montagem. O plastoma da espécie descrito por Brandão et al. (2019) foi montado a partir de RNA-seq, ou seja, de transcritos; se KY404932.1 for esse depósito (exercício 3), a sequência pode já carregar parte das edições. Distinguir as hipóteses exige alinhar com plastomas de espécies próximas, o que faremos no Módulo 2.",
+    "crumbs": [
+      "Módulo 1 - Sequências e ocorrências como dados",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m01-sequencias-ocorrencias/aula-01.html#o-que-o-registro-real-mostrou",
+    "href": "modulos/m01-sequencias-ocorrencias/aula-01.html#o-que-o-registro-real-mostrou",
+    "title": "2  Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez",
+    "section": "2.9 O que o registro real mostrou",
+    "text": "2.9 O que o registro real mostrou\nNenhuma CDS suspeita, e por que isso não prova ausência de edição. As 82 de 82 CDS são válidas pela tabela 11, e 82 reproduzem exatamente o /translation anotado. Isso mostra consistência interna: a tradução anotada foi derivada da própria sequência depositada. No padrão INSDC, uma proteína sabidamente editada recebe o qualificador /exception=\"RNA editing\"; este registro tem 0 CDS com qualquer /exception. Conclusão metodológica: comparar uma sequência com a tradução dela mesma só detecta inconsistência de anotação, não biologia. Estudar edição exige duas fontes independentes do mesmo gene, DNA genômico contra cDNA. O poder de uma validação depende da independência da evidência, e esse princípio volta na validação espacial de SDMs (M4).\nO conteúdo gênico bate com o de uma congênere. O registro tem 82 genes codificadores e 32 tRNAs distintos. Para Araucaria cunninghamii foram relatados 82 genes codificadores, 36 genes de tRNA e 4 de rRNA, também sem IRs canônicas (Ping et al. 2020).\nCópias: duas confirmam o artigo, três vão além dele. Os genes anotados em mais de uma cópia são rrn5 (2x), trnD-GUC (3x), trnI-CAU (2x), trnR-UCU (2x), trnY-GUA (2x). rrn5 e trnI-CAU são exatamente as exceções descritas por Brandão et al. (2019) para genes que ficariam na IR ancestral. Os tRNAs trnD-GUC, trnY-GUA e trnR-UCU não fazem parte da IR ancestral: suas cópias são outro fenômeno. Coníferas adquiriram repetições invertidas curtas e novas, algumas recombinacionalmente ativas (Guo et al. 2014), formadas principalmente por genes de tRNA; em Retrophyllum piresii (Podocarpaceae), trnN-GUU e trnD-GUC aparecem duplicados como repetições invertidas e diretas (Vieira et al. 2016).\nalvo = set(genes_repetidos(record)[[\"tipo\", \"gene\"]].itertuples(index=False, name=None))\ncopias = []\nfor f in record.features:\n    chave = (f.type, f.qualifiers.get(\"gene\", [\"\"])[0])\n    if chave in alvo:\n        inicio, fim = coordenadas_genbank(f)\n        copias.append(\n            {\n                \"tipo\": chave[0],\n                \"gene\": chave[1],\n                \"inicio\": inicio,\n                \"fim\": fim,\n                \"fita\": int(f.location.strand or 0),\n                \"comprimento\": len(f.location),\n                \"seq\": str(f.extract(record.seq)),\n            }\n        )\ncopias = pd.DataFrame(copias).sort_values([\"gene\", \"inicio\"], ignore_index=True)\ncopias[\"identica_a_1a_copia\"] = copias.groupby(\"gene\")[\"seq\"].transform(\n    lambda s: s == s.iloc[0]\n)\ntabela(copias.drop(columns=\"seq\"))\n\n\n\n\ntipo\n\n\ngene\n\n\ninicio\n\n\nfim\n\n\nfita\n\n\ncomprimento\n\n\nidentica_a_1a_copia\n\n\n\n\n\n\nrRNA\n\n\nrrn5\n\n\n76\n\n\n195\n\n\n-1\n\n\n120\n\n\nTrue\n\n\n\n\nrRNA\n\n\nrrn5\n\n\n105525\n\n\n105644\n\n\n1\n\n\n120\n\n\nTrue\n\n\n\n\ntRNA\n\n\ntrnD-GUC\n\n\n61196\n\n\n61269\n\n\n-1\n\n\n74\n\n\nTrue\n\n\n\n\ntRNA\n\n\ntrnD-GUC\n\n\n89126\n\n\n89199\n\n\n-1\n\n\n74\n\n\nTrue\n\n\n\n\ntRNA\n\n\ntrnD-GUC\n\n\n120575\n\n\n120648\n\n\n-1\n\n\n74\n\n\nTrue\n\n\n\n\ntRNA\n\n\ntrnI-CAU\n\n\n24638\n\n\n24710\n\n\n1\n\n\n73\n\n\nTrue\n\n\n\n\ntRNA\n\n\ntrnI-CAU\n\n\n119792\n\n\n119863\n\n\n-1\n\n\n72\n\n\nFalse\n\n\n\n\ntRNA\n\n\ntrnR-UCU\n\n\n40344\n\n\n40415\n\n\n1\n\n\n72\n\n\nTrue\n\n\n\n\ntRNA\n\n\ntrnR-UCU\n\n\n102246\n\n\n102317\n\n\n1\n\n\n72\n\n\nTrue\n\n\n\n\ntRNA\n\n\ntrnY-GUA\n\n\n28628\n\n\n28707\n\n\n-1\n\n\n80\n\n\nTrue\n\n\n\n\ntRNA\n\n\ntrnY-GUA\n\n\n61506\n\n\n61589\n\n\n-1\n\n\n84\n\n\nFalse\n\n\n\n\nLeia a tabela como um mapa de hipóteses para a Sessão 2. Cópias idênticas em fitas opostas são candidatas a repetições invertidas curtas; cópias na mesma fita, a repetições diretas. Nos dois casos, o gene é só a parte anotada de uma repetição maior, e o tamanho e a posição dessa repetição só aparecem quando a procuramos na sequência inteira, por algoritmo.",
+    "crumbs": [
+      "Módulo 1 - Sequências e ocorrências como dados",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m01-sequencias-ocorrencias/aula-01.html#exercícios",
+    "href": "modulos/m01-sequencias-ocorrencias/aula-01.html#exercícios",
+    "title": "2  Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez",
+    "section": "2.10 Exercícios",
+    "text": "2.10 Exercícios\n\nPropriedade da involução. Escreva em tests/ um teste que gere 1.000 sequências aleatórias e verifique que rc(rc(s)) == s e que gc_percent(s) == gc_percent(rc(s)). Explique, com a definição de \\(c\\), por que a segunda igualdade vale.\nBarcodes para o Módulo 3. Extraia rbcL e matK deste registro com feature.extract e salve um FASTA em 03_dados/processados/plastomas/. Confira o comprimento de cada um em códons.\nQuem depositou? Abra o campo REFERENCE do arquivo .gb (ou record.annotations[\"references\"]). O depósito KY404932.1 corresponde ao trabalho de Brandão et al. (2019)? Registre a resposta no diário de bordo.\nTeste uma afirmação publicada. A tabela de genes repetidos confirma que só rrn5 e trnI-CAU aparecem em mais de uma cópia? Se não, investigue a nomenclatura (/gene versus /product) antes de concluir.\nComparação congenérica. Rode o script com --accession NC_026450.1 (Araucaria heterophylla, usado como referência na montagem da araucária) e compare comprimento, GC e conteúdo gênico.\nComplexidade. Mostre que gc_janela é \\(O(n)\\) enquanto a versão ingênua é \\(O(n\\,w)\\). Meça os dois com timeit para \\(w = 1.000\\) no plastoma inteiro.",
+    "crumbs": [
+      "Módulo 1 - Sequências e ocorrências como dados",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span>"
+    ]
+  },
+  {
+    "objectID": "modulos/m01-sequencias-ocorrencias/aula-01.html#referências",
+    "href": "modulos/m01-sequencias-ocorrencias/aula-01.html#referências",
+    "title": "2  Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez",
+    "section": "Referências",
+    "text": "Referências\n\n\nBrandão, José Henrique S. G., Nureyev F. Rodrigues, Maria Eguiluz, Frank\nGuzman, and Rogerio Margis. 2019. “Araucaria Angustifolia\nChloroplast Genome Sequence and Its Relation to Other\nAraucariaceae.” Genetics and Molecular Biology 42 (4).\nhttps://doi.org/10.1590/1678-4685-GMB-2018-0213.\n\n\nCBOL Plant Working Group. 2009. “A DNA Barcode for\nLand Plants.” Proceedings of the National Academy of\nSciences 106 (31): 12794–97. https://doi.org/10.1073/pnas.0905845106.\n\n\nCock, Peter J. A., Tiago Antao, Jeffrey T. Chang, et al. 2009.\n“Biopython: Freely Available Python Tools for Computational\nMolecular Biology and Bioinformatics.” Bioinformatics 25\n(11): 1422–23. https://doi.org/10.1093/bioinformatics/btp163.\n\n\nGuo, Wenhu, Felix Grewe, Amie Cobo-Clark, et al. 2014.\n“Predominant and Substoichiometric Isomers of the Plastid Genome\nCoexist Within Juniperus Plants and Have Shifted Multiple Times\nDuring Cupressophyte Evolution.” Genome Biology and\nEvolution 6 (3): 580–90. https://doi.org/10.1093/gbe/evu046.\n\n\nKans, Jonathan. 2010. Entrez Programming Utilities Help.\nNational Center for Biotechnology Information (US). https://www.ncbi.nlm.nih.gov/books/NBK25501/.\n\n\nPing, Jingyao, Xin Luo, Ming Zhu, et al. 2020. “The Complete\nChloroplast Genome of Araucaria Cunninghamii\n(Araucariaceae).” Mitochondrial DNA Part B, ahead of\nprint. https://doi.org/10.1080/23802359.2020.1787265.\n\n\nVieira, Leila do Nascimento, Marcelo Rogalski,\nHelisson Faoro, et al. 2016. “The Plastome Sequence of the\nEndemic Amazonian Conifer, Retrophyllum Piresii (Silba)\nc.n.page, Reveals Different Recombination Events and Plastome\nIsoforms.” Tree Genetics & Genomes 12 (1). https://doi.org/10.1007/s11295-016-0968-0.\n\n\nWu, Chung-Shien, Ya-Nan Wang, Chi-Yao Hsu, Ching-Ping Lin, and Shu-Miaw\nChaw. 2011. “Loss of Different Inverted Repeat Copies from the\nChloroplast Genomes of Pinaceae and Cupressophytes and Influence of\nHeterotachy on the Evaluation of Gymnosperm Phylogeny.”\nGenome Biology and Evolution 3: 1284–95. https://pmc.ncbi.nlm.nih.gov/articles/PMC3219958.",
+    "crumbs": [
+      "Módulo 1 - Sequências e ocorrências como dados",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Aula 1 - O plastoma como dado: SeqRecord, coordenadas, código genético e Entrez</span>"
+    ]
+  }
+]
