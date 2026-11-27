@@ -164,3 +164,24 @@ def test_ida_e_volta_genbank(registro, tmp_path):
     assert features_para_dataframe(lido)["localizacao"].tolist() == (
         features_para_dataframe(registro)["localizacao"].tolist()
     )
+
+import random
+from Bio.Seq import Seq
+from Bio.SeqUtils import gc_fraction
+
+
+def test_involucao_complemento_reverso_e_gc():
+    """Exercício 1 (Aula 1): rc(rc(s)) == s e GC(s) == GC(rc(s)) em 1.000 sequências."""
+    rng = random.Random(42)
+    alfabeto = ("A", "C", "G", "T")
+
+    for _ in range(1000):
+        tamanho = rng.randint(10, 500)
+        seq_str = "".join(rng.choices(alfabeto, k=tamanho))
+        seq = Seq(seq_str)
+
+        rc1 = seq.reverse_complement()
+        rc2 = rc1.reverse_complement()
+
+        assert str(rc2) == seq_str
+        assert abs(gc_fraction(seq) - gc_fraction(rc1)) < 1e-12

@@ -352,6 +352,85 @@ transferência automática, e **erro de montagem**. O plastoma da espécie descr
 edições. Distinguir as hipóteses exige alinhar com plastomas de espécies próximas, o que
 faremos no Módulo 2.
 
+## O que o registro real mostrou
+
+```{python}
+#| label: numeros-reais
+#| include: false
+n_cds = int(len(val))
+n_validas = int(val["cds_valida"].sum())
+n_conferem = int(val["confere_anotacao"].fillna(False).sum())
+resumo_real = resumo_registro(record)
+n_cds_unicos = int(resumo_real["genes_unicos"]["CDS"])
+n_trna_unicos = int(resumo_real["genes_unicos"]["tRNA"])
+excecoes = [
+    (f.qualifiers.get("gene", [""])[0], valor)
+    for f in record.features
+    if f.type == "CDS"
+    for valor in f.qualifiers.get("exception", [])
+]
+n_excecoes = len(excecoes)
+repetidos_txt = ", ".join(
+    f"*{g}* ({n}x)" for _, g, n in genes_repetidos(record).itertuples(index=False)
+)
+```
+
+**Nenhuma CDS suspeita, e por que isso não prova ausência de edição.** As `r py$n_validas`
+de `r py$n_cds` CDS são válidas pela tabela 11, e `r py$n_conferem` reproduzem exatamente o
+`/translation` anotado. Isso mostra consistência interna: a tradução anotada foi derivada da
+própria sequência depositada. No padrão INSDC, uma proteína sabidamente editada recebe o
+qualificador `/exception="RNA editing"`; este registro tem `r py$n_excecoes` CDS com
+qualquer `/exception`. Conclusão metodológica: comparar uma sequência com a tradução dela
+mesma só detecta inconsistência de anotação, não biologia. Estudar edição exige duas fontes
+independentes do mesmo gene, DNA genômico contra cDNA. **O poder de uma validação depende da
+independência da evidência**, e esse princípio volta na validação espacial de SDMs (M4).
+
+**O conteúdo gênico bate com o de uma congênere.** O registro tem `r py$n_cds_unicos` genes
+codificadores e `r py$n_trna_unicos` tRNAs distintos. Para *Araucaria cunninghamii* foram
+relatados 82 genes codificadores, 36 genes de tRNA e 4 de rRNA, também sem IRs canônicas
+[@ping2020cunninghamii].
+
+**Cópias: duas confirmam o artigo, três vão além dele.** Os genes anotados em mais de uma
+cópia são `r py$repetidos_txt`. *rrn5* e *trnI-CAU* são exatamente as exceções descritas por
+@brandao2019araucaria para genes que ficariam na IR ancestral. Os tRNAs *trnD-GUC*,
+*trnY-GUA* e *trnR-UCU* não fazem parte da IR ancestral: suas cópias são outro fenômeno.
+Coníferas adquiriram repetições invertidas curtas e novas, algumas recombinacionalmente
+ativas [@guo2014juniperus], formadas principalmente por genes de tRNA; em *Retrophyllum
+piresii* (Podocarpaceae), *trnN-GUU* e *trnD-GUC* aparecem duplicados como repetições
+invertidas e diretas [@vieira2016retrophyllum].
+
+```{python}
+#| label: copias-detalhe
+#| output: asis
+alvo = set(genes_repetidos(record)[["tipo", "gene"]].itertuples(index=False, name=None))
+copias = []
+for f in record.features:
+    chave = (f.type, f.qualifiers.get("gene", [""])[0])
+    if chave in alvo:
+        inicio, fim = coordenadas_genbank(f)
+        copias.append(
+            {
+                "tipo": chave[0],
+                "gene": chave[1],
+                "inicio": inicio,
+                "fim": fim,
+                "fita": int(f.location.strand or 0),
+                "comprimento": len(f.location),
+                "seq": str(f.extract(record.seq)),
+            }
+        )
+copias = pd.DataFrame(copias).sort_values(["gene", "inicio"], ignore_index=True)
+copias["identica_a_1a_copia"] = copias.groupby("gene")["seq"].transform(
+    lambda s: s == s.iloc[0]
+)
+tabela(copias.drop(columns="seq"))
+```
+
+Leia a tabela como um mapa de hipóteses para a Sessão 2. Cópias idênticas em fitas opostas
+são candidatas a repetições invertidas curtas; cópias na mesma fita, a repetições diretas.
+Nos dois casos, o gene é só a parte anotada de uma repetição maior, e o tamanho e a posição
+dessa repetição só aparecem quando a procuramos na sequência inteira, por algoritmo.
+
 ## Exercícios
 
 1. **Propriedade da involução.** Escreva em `tests/` um teste que gere 1.000 sequências
