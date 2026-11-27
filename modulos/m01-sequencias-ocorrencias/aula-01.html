@@ -263,6 +263,13 @@ window.Quarto = {
   </ul></li>
   <li><a href="#o-que-o-registro-real-mostrou" id="toc-o-que-o-registro-real-mostrou" class="nav-link" data-scroll-target="#o-que-o-registro-real-mostrou"><span class="header-section-number">2.9</span> O que o registro real mostrou</a></li>
   <li><a href="#exercícios" id="toc-exercícios" class="nav-link" data-scroll-target="#exercícios"><span class="header-section-number">2.10</span> Exercícios</a></li>
+  <li><a href="#exercícios-comentados" id="toc-exercícios-comentados" class="nav-link" data-scroll-target="#exercícios-comentados"><span class="header-section-number">2.11</span> Exercícios comentados</a>
+  <ul class="collapse">
+  <li><a href="#a-involução-e-o-gc" id="toc-a-involução-e-o-gc" class="nav-link" data-scroll-target="#a-involução-e-o-gc"><span class="header-section-number">2.11.1</span> 1. A involução e o GC</a></li>
+  <li><a href="#quem-depositou-leia-o-reference-antes-de-citar" id="toc-quem-depositou-leia-o-reference-antes-de-citar" class="nav-link" data-scroll-target="#quem-depositou-leia-o-reference-antes-de-citar"><span class="header-section-number">2.11.2</span> 3. Quem depositou: leia o <code>REFERENCE</code> antes de citar</a></li>
+  <li><a href="#e-5.-nomes-não-são-sequências" id="toc-e-5.-nomes-não-são-sequências" class="nav-link" data-scroll-target="#e-5.-nomes-não-são-sequências"><span class="header-section-number">2.11.3</span> 4 e 5. Nomes não são sequências</a></li>
+  <li><a href="#complexidade-o-que-a-notação-o-não-diz" id="toc-complexidade-o-que-a-notação-o-não-diz" class="nav-link" data-scroll-target="#complexidade-o-que-a-notação-o-não-diz"><span class="header-section-number">2.11.4</span> 6. Complexidade: o que a notação O não diz</a></li>
+  </ul></li>
   <li><a href="#referências" id="toc-referências" class="nav-link" data-scroll-target="#referências">Referências</a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/PedroLuizskt/bioinformatica-vegetal-sdm/blob/main/modulos/m01-sequencias-ocorrencias/aula-01.qmd" class="toc-action"><i class="bi bi-github"></i>Ver o código fonte</a></li><li><a href="https://github.com/PedroLuizskt/bioinformatica-vegetal-sdm/issues/new" class="toc-action"><i class="bi empty"></i>Criar uma issue</a></li></ul></div></nav>
@@ -326,7 +333,7 @@ window.Quarto = {
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Coníferas perderam uma das cópias da repetição invertida, e Pinaceae e as demais coníferas (cupressófitas, que incluem Araucariaceae) perderam cópias diferentes <span class="citation" data-cites="wu2011conifer">(<a href="aula-01.html#ref-wu2011conifer" role="doc-biblioref">Wu et al. 2011</a>)</span>. No plastoma de <em>Araucaria angustifolia</em>, a organização LSC/SSC/IRa/IRb não está presente e os genes que ficariam na IR aparecem em cópia única, com exceção de <em>rrn5</em> e <em>trnI-CAU</em> <span class="citation" data-cites="brandao2019araucaria">(<a href="aula-01.html#ref-brandao2019araucaria" role="doc-biblioref">Brandão et al. 2019</a>)</span>. Começar por uma exceção é proposital: ela obriga a medir em vez de presumir. Na Sessão 2 vamos detectar repetições invertidas por algoritmo e comparar a araucária com um ipê, que tem a estrutura canônica.</p>
+<p>Coníferas perderam uma das cópias da repetição invertida, e Pinaceae e as demais coníferas (cupressófitas, que incluem Araucariaceae) perderam cópias diferentes <span class="citation" data-cites="wu2011conifer">(<a href="aula-01.html#ref-wu2011conifer" role="doc-biblioref">Wu et al. 2011</a>)</span>. No plastoma de <em>Araucaria angustifolia</em>, a organização LSC/SSC/IRa/IRb não está presente e os genes que ficariam na IR aparecem em cópia única, com exceção de <em>rrn5</em> e <em>trnI-CAU</em> <span class="citation" data-cites="brandao2019araucaria">(<a href="aula-01.html#ref-brandao2019araucaria" role="doc-biblioref">Brandão et al. 2019</a>, montagem MH599004)</span>. Começar por uma exceção é proposital: ela obriga a medir em vez de presumir. Na Sessão 2 vamos detectar repetições invertidas por algoritmo e comparar a araucária com um ipê, que tem a estrutura canônica.</p>
 </div>
 </div>
 </section>
@@ -878,14 +885,14 @@ nenhuma
 </tr>
 </tbody>
 </table>
-<p>Antes de concluir qualquer coisa, leia cada linha com três hipóteses em mente: <strong>edição de RNA</strong> (poucas diferenças, códon <code>ACG</code> no início), <strong>anotação herdada</strong> de outra espécie por transferência automática, e <strong>erro de montagem</strong>. O plastoma da espécie descrito por <span class="citation" data-cites="brandao2019araucaria">Brandão et al. (<a href="aula-01.html#ref-brandao2019araucaria" role="doc-biblioref">2019</a>)</span> foi montado a partir de RNA-seq, ou seja, de transcritos; se <code>KY404932.1</code> for esse depósito (exercício 3), a sequência pode já carregar parte das edições. Distinguir as hipóteses exige alinhar com plastomas de espécies próximas, o que faremos no Módulo 2.</p>
+<p>Antes de concluir qualquer coisa, leia cada linha com três hipóteses em mente: <strong>edição de RNA</strong> (poucas diferenças, códon <code>ACG</code> no início), <strong>anotação herdada</strong> de outra espécie por transferência automática, e <strong>erro de montagem</strong>. O método de obtenção da sequência também pesa: a espécie tem dois plastomas completos no GenBank, de grupos e dados diferentes. <code>KY404932.1</code>, o desta aula, foi depositado por Vieira e colaboradores (UFSC) e não declara o método no registro; <code>MH599004</code> foi montado por <span class="citation" data-cites="brandao2019araucaria">Brandão et al. (<a href="aula-01.html#ref-brandao2019araucaria" role="doc-biblioref">2019</a>)</span> a partir de RNA-seq, isto é, de transcritos, e por isso pode já carregar parte das edições na própria sequência (exercício 3). Distinguir as hipóteses exige alinhar com plastomas de espécies próximas, o que faremos no Módulo 2.</p>
 </section>
 </section>
 <section id="o-que-o-registro-real-mostrou" class="level2" data-number="2.9">
 <h2 data-number="2.9" class="anchored" data-anchor-id="o-que-o-registro-real-mostrou"><span class="header-section-number">2.9</span> O que o registro real mostrou</h2>
 <p><strong>Nenhuma CDS suspeita, e por que isso não prova ausência de edição.</strong> As 82 de 82 CDS são válidas pela tabela 11, e 82 reproduzem exatamente o <code>/translation</code> anotado. Isso mostra consistência interna: a tradução anotada foi derivada da própria sequência depositada. No padrão INSDC, uma proteína sabidamente editada recebe o qualificador <code>/exception="RNA editing"</code>; este registro tem 0 CDS com qualquer <code>/exception</code>. Conclusão metodológica: comparar uma sequência com a tradução dela mesma só detecta inconsistência de anotação, não biologia. Estudar edição exige duas fontes independentes do mesmo gene, DNA genômico contra cDNA. <strong>O poder de uma validação depende da independência da evidência</strong>, e esse princípio volta na validação espacial de SDMs (M4).</p>
 <p><strong>O conteúdo gênico bate com o de uma congênere.</strong> O registro tem 82 genes codificadores e 32 tRNAs distintos. Para <em>Araucaria cunninghamii</em> foram relatados 82 genes codificadores, 36 genes de tRNA e 4 de rRNA, também sem IRs canônicas <span class="citation" data-cites="ping2020cunninghamii">(<a href="aula-01.html#ref-ping2020cunninghamii" role="doc-biblioref">Ping et al. 2020</a>)</span>.</p>
-<p><strong>Cópias: duas confirmam o artigo, três vão além dele.</strong> Os genes anotados em mais de uma cópia são <em>rrn5</em> (2x), <em>trnD-GUC</em> (3x), <em>trnI-CAU</em> (2x), <em>trnR-UCU</em> (2x), <em>trnY-GUA</em> (2x). <em>rrn5</em> e <em>trnI-CAU</em> são exatamente as exceções descritas por <span class="citation" data-cites="brandao2019araucaria">Brandão et al. (<a href="aula-01.html#ref-brandao2019araucaria" role="doc-biblioref">2019</a>)</span> para genes que ficariam na IR ancestral. Os tRNAs <em>trnD-GUC</em>, <em>trnY-GUA</em> e <em>trnR-UCU</em> não fazem parte da IR ancestral: suas cópias são outro fenômeno. Coníferas adquiriram repetições invertidas curtas e novas, algumas recombinacionalmente ativas <span class="citation" data-cites="guo2014juniperus">(<a href="aula-01.html#ref-guo2014juniperus" role="doc-biblioref">Guo et al. 2014</a>)</span>, formadas principalmente por genes de tRNA; em <em>Retrophyllum piresii</em> (Podocarpaceae), <em>trnN-GUU</em> e <em>trnD-GUC</em> aparecem duplicados como repetições invertidas e diretas <span class="citation" data-cites="vieira2016retrophyllum">(<a href="aula-01.html#ref-vieira2016retrophyllum" role="doc-biblioref"><span class="nocase">Vieira et al.</span> 2016</a>)</span>.</p>
+<p><strong>Cópias: duas confirmam o artigo, três vão além dele.</strong> Os genes anotados em mais de uma cópia são <em>rrn5</em> (2x), <em>trnD-GUC</em> (3x), <em>trnI-CAU</em> (2x), <em>trnR-UCU</em> (2x), <em>trnY-GUA</em> (2x). <em>rrn5</em> e <em>trnI-CAU</em> são exatamente as exceções descritas por <span class="citation" data-cites="brandao2019araucaria">Brandão et al. (<a href="aula-01.html#ref-brandao2019araucaria" role="doc-biblioref">2019</a>)</span> para genes que ficariam na IR ancestral. Como <code>KY404932.1</code> é uma montagem independente da deles (outro grupo, outros dados), a concordância vale como evidência independente: o princípio do parágrafo anterior, desta vez a favor. Os tRNAs <em>trnD-GUC</em>, <em>trnY-GUA</em> e <em>trnR-UCU</em> não fazem parte da IR ancestral: suas cópias são outro fenômeno. Coníferas adquiriram repetições invertidas curtas e novas, algumas recombinacionalmente ativas <span class="citation" data-cites="guo2014juniperus">(<a href="aula-01.html#ref-guo2014juniperus" role="doc-biblioref">Guo et al. 2014</a>)</span>, formadas principalmente por genes de tRNA; em <em>Retrophyllum piresii</em> (Podocarpaceae), <em>trnN-GUU</em> e <em>trnD-GUC</em> aparecem duplicados como repetições invertidas e diretas <span class="citation" data-cites="vieira2016retrophyllum">(<a href="aula-01.html#ref-vieira2016retrophyllum" role="doc-biblioref"><span class="nocase">Vieira et al.</span> 2016</a>)</span>.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>alvo <span class="op">=</span> <span class="bu">set</span>(genes_repetidos(record)[[<span class="st">"tipo"</span>, <span class="st">"gene"</span>]].itertuples(index<span class="op">=</span><span class="va">False</span>, name<span class="op">=</span><span class="va">None</span>))</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>copias <span class="op">=</span> []</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> f <span class="kw">in</span> record.features:</span>
@@ -1199,9 +1206,713 @@ False
 <li><strong>Barcodes para o Módulo 3.</strong> Extraia <em>rbcL</em> e <em>matK</em> deste registro com <code>feature.extract</code> e salve um FASTA em <code>03_dados/processados/plastomas/</code>. Confira o comprimento de cada um em códons.</li>
 <li><strong>Quem depositou?</strong> Abra o campo <code>REFERENCE</code> do arquivo <code>.gb</code> (ou <code>record.annotations["references"]</code>). O depósito <code>KY404932.1</code> corresponde ao trabalho de <span class="citation" data-cites="brandao2019araucaria">Brandão et al. (<a href="aula-01.html#ref-brandao2019araucaria" role="doc-biblioref">2019</a>)</span>? Registre a resposta no diário de bordo.</li>
 <li><strong>Teste uma afirmação publicada.</strong> A tabela de genes repetidos confirma que só <em>rrn5</em> e <em>trnI-CAU</em> aparecem em mais de uma cópia? Se não, investigue a nomenclatura (<code>/gene</code> versus <code>/product</code>) antes de concluir.</li>
-<li><strong>Comparação congenérica.</strong> Rode o script com <code>--accession NC_026450.1</code> (<em>Araucaria heterophylla</em>, usado como referência na montagem da araucária) e compare comprimento, GC e conteúdo gênico.</li>
-<li><strong>Complexidade.</strong> Mostre que <code>gc_janela</code> é <span class="math inline">\(O(n)\)</span> enquanto a versão ingênua é <span class="math inline">\(O(n\,w)\)</span>. Meça os dois com <code>timeit</code> para <span class="math inline">\(w = 1.000\)</span> no plastoma inteiro.</li>
+<li><strong>Comparação congenérica.</strong> Rode o script com <code>--accession NC_026450.1</code> (<em>Araucaria heterophylla</em>, usado por <span class="citation" data-cites="brandao2019araucaria">Brandão et al. (<a href="aula-01.html#ref-brandao2019araucaria" role="doc-biblioref">2019</a>)</span> para orientar os scaffolds da montagem deles) e compare comprimento, GC e conteúdo gênico.</li>
+<li><strong>Complexidade.</strong> Mostre que <code>gc_janela</code> custa <span class="math inline">\(O(n)\)</span> e que a versão ingênua custa <span class="math inline">\(O(n\,w/p)\)</span>, em que <span class="math inline">\(p\)</span> é o passo. Meça as duas para <span class="math inline">\(w = 1.000\)</span> e vários passos e encontre o <span class="math inline">\(w/p\)</span> a partir do qual a versão <span class="math inline">\(O(n)\)</span> vence.</li>
 </ol>
+<p>Os exercícios 2 a 6 estão resolvidos em <code>scripts/m01_s01_exercicios.py</code>.</p>
+</section>
+<section id="exercícios-comentados" class="level2" data-number="2.11">
+<h2 data-number="2.11" class="anchored" data-anchor-id="exercícios-comentados"><span class="header-section-number">2.11</span> Exercícios comentados</h2>
+<section id="a-involução-e-o-gc" class="level3" data-number="2.11.1">
+<h3 data-number="2.11.1" class="anchored" data-anchor-id="a-involução-e-o-gc"><span class="header-section-number">2.11.1</span> 1. A involução e o GC</h3>
+<p>Escreva <span class="math inline">\(r\)</span> para a reversão e <span class="math inline">\(c\)</span> para o complemento aplicado base a base. As duas são involuções (<span class="math inline">\(r \circ r = c \circ c = \mathrm{id}\)</span>) e comutam, porque <span class="math inline">\(c\)</span> age em cada posição sem olhar a ordem. Logo <span class="math inline">\(\mathrm{rc} \circ \mathrm{rc} = r \circ c \circ r \circ c = (r \circ r) \circ (c \circ c) = \mathrm{id}\)</span>. Para o GC, <span class="math inline">\(c\)</span> leva o conjunto <span class="math inline">\(\{G, C\}\)</span> nele mesmo e <span class="math inline">\(\{A, T\}\)</span> nele mesmo, e <span class="math inline">\(r\)</span> não muda contagens. As duas contagens da razão (G+C e bases válidas) são idênticas em <span class="math inline">\(s\)</span> e em <span class="math inline">\(\mathrm{rc}(s)\)</span>, então a igualdade é exata, sem tolerância numérica. O teste do repositório usa o alfabeto IUPAC completo: <em>S</em> e <em>W</em> são fixos sob <span class="math inline">\(c\)</span>, e os pares <em>R/Y</em>, <em>K/M</em>, <em>B/V</em> e <em>D/H</em> são descartados dos dois lados.</p>
+</section>
+<section id="quem-depositou-leia-o-reference-antes-de-citar" class="level3" data-number="2.11.2">
+<h3 data-number="2.11.2" class="anchored" data-anchor-id="quem-depositou-leia-o-reference-antes-de-citar"><span class="header-section-number">2.11.2</span> 3. Quem depositou: leia o <code>REFERENCE</code> antes de citar</h3>
+<p>O campo <code>REFERENCE</code> de <code>KY404932.1</code> aponta Vieira e colaboradores (Fitotecnia, UFSC), com submissão em dezembro de 2016 e artigo ainda não publicado na data do depósito. Não é o depósito de <span class="citation" data-cites="brandao2019araucaria">Brandão et al. (<a href="aula-01.html#ref-brandao2019araucaria" role="doc-biblioref">2019</a>)</span>. A espécie tem, portanto, duas montagens independentes:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th><code>KY404932.1</code> (esta aula)</th>
+<th><code>MH599004</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Grupo</td>
+<td>Vieira et al., UFSC</td>
+<td><span class="citation" data-cites="brandao2019araucaria">Brandão et al. (<a href="aula-01.html#ref-brandao2019araucaria" role="doc-biblioref">2019</a>)</span>, UFRGS</td>
+</tr>
+<tr class="even">
+<td>Dados</td>
+<td>não declarados no registro</td>
+<td>RNA-seq de 24 bibliotecas públicas</td>
+</tr>
+<tr class="odd">
+<td>Montagem</td>
+<td>não declarada no registro</td>
+<td><em>de novo</em> (ABySS), orientada por <code>NC_026450.1</code></td>
+</tr>
+<tr class="even">
+<td>Comprimento</td>
+<td>145.558 pb</td>
+<td>146.203 pb</td>
+</tr>
+<tr class="odd">
+<td>Genes codificadores</td>
+<td>82</td>
+<td>80</td>
+</tr>
+</tbody>
+</table>
+<p>As 82 de 82 CDS que conferem com o <code>/translation</code> continuam sendo consistência interna, seja qual for o método: a tradução anotada sai da própria sequência depositada.</p>
+</section>
+<section id="e-5.-nomes-não-são-sequências" class="level3" data-number="2.11.3">
+<h3 data-number="2.11.3" class="anchored" data-anchor-id="e-5.-nomes-não-são-sequências"><span class="header-section-number">2.11.3</span> 4 e 5. Nomes não são sequências</h3>
+<p>Saber se cópias com “sequências distintas” são genes diferentes exige alinhar as cópias. <code>comparar_copias</code> classifica cada par em <code>identica</code>, <code>borda</code> (uma cópia contida na outra: diferem só nos limites anotados) ou <code>divergente</code>, e diz se o par está na mesma fita (<code>direta</code>) ou em fitas opostas (<code>invertida</code>).</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>pares <span class="op">=</span> pd.concat(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    [comparar_copias(r).assign(accession<span class="op">=</span>r.<span class="bu">id</span>) <span class="cf">for</span> r <span class="kw">in</span> (record, congenere)],</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    ignore_index<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>colunas <span class="op">=</span> [</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"accession"</span>, <span class="st">"gene"</span>, <span class="st">"copia_a"</span>, <span class="st">"copia_b"</span>, <span class="st">"orientacao"</span>, <span class="st">"relacao"</span>,</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"comprimento_a"</span>, <span class="st">"comprimento_b"</span>, <span class="st">"substituicoes"</span>, <span class="st">"gaps"</span>, <span class="st">"identidade_pct"</span>,</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>tabela(pares[colunas])</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="dataframe table table-sm table-striped small">
+<thead>
+<tr>
+<th>
+accession
+</th>
+<th>
+gene
+</th>
+<th>
+copia_a
+</th>
+<th>
+copia_b
+</th>
+<th>
+orientacao
+</th>
+<th>
+relacao
+</th>
+<th>
+comprimento_a
+</th>
+<th>
+comprimento_b
+</th>
+<th>
+substituicoes
+</th>
+<th>
+gaps
+</th>
+<th>
+identidade_pct
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+KY404932.1
+</td>
+<td>
+rrn5
+</td>
+<td>
+1
+</td>
+<td>
+2
+</td>
+<td>
+invertida
+</td>
+<td>
+identica
+</td>
+<td>
+120
+</td>
+<td>
+120
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+100.00
+</td>
+</tr>
+<tr>
+<td>
+KY404932.1
+</td>
+<td>
+trnD-GUC
+</td>
+<td>
+1
+</td>
+<td>
+2
+</td>
+<td>
+direta
+</td>
+<td>
+identica
+</td>
+<td>
+74
+</td>
+<td>
+74
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+100.00
+</td>
+</tr>
+<tr>
+<td>
+KY404932.1
+</td>
+<td>
+trnD-GUC
+</td>
+<td>
+1
+</td>
+<td>
+3
+</td>
+<td>
+direta
+</td>
+<td>
+identica
+</td>
+<td>
+74
+</td>
+<td>
+74
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+100.00
+</td>
+</tr>
+<tr>
+<td>
+KY404932.1
+</td>
+<td>
+trnD-GUC
+</td>
+<td>
+2
+</td>
+<td>
+3
+</td>
+<td>
+direta
+</td>
+<td>
+identica
+</td>
+<td>
+74
+</td>
+<td>
+74
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+100.00
+</td>
+</tr>
+<tr>
+<td>
+KY404932.1
+</td>
+<td>
+trnI-CAU
+</td>
+<td>
+1
+</td>
+<td>
+2
+</td>
+<td>
+invertida
+</td>
+<td>
+divergente
+</td>
+<td>
+73
+</td>
+<td>
+72
+</td>
+<td>
+5
+</td>
+<td>
+1
+</td>
+<td>
+91.78
+</td>
+</tr>
+<tr>
+<td>
+KY404932.1
+</td>
+<td>
+trnR-UCU
+</td>
+<td>
+1
+</td>
+<td>
+2
+</td>
+<td>
+direta
+</td>
+<td>
+identica
+</td>
+<td>
+72
+</td>
+<td>
+72
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+100.00
+</td>
+</tr>
+<tr>
+<td>
+KY404932.1
+</td>
+<td>
+trnY-GUA
+</td>
+<td>
+1
+</td>
+<td>
+2
+</td>
+<td>
+direta
+</td>
+<td>
+divergente
+</td>
+<td>
+80
+</td>
+<td>
+84
+</td>
+<td>
+4
+</td>
+<td>
+4
+</td>
+<td>
+90.48
+</td>
+</tr>
+<tr>
+<td>
+NC_026450.1
+</td>
+<td>
+rrn5
+</td>
+<td>
+1
+</td>
+<td>
+2
+</td>
+<td>
+invertida
+</td>
+<td>
+borda
+</td>
+<td>
+120
+</td>
+<td>
+121
+</td>
+<td>
+0
+</td>
+<td>
+1
+</td>
+<td>
+99.17
+</td>
+</tr>
+<tr>
+<td>
+NC_026450.1
+</td>
+<td>
+trnD-GUC
+</td>
+<td>
+1
+</td>
+<td>
+2
+</td>
+<td>
+direta
+</td>
+<td>
+identica
+</td>
+<td>
+74
+</td>
+<td>
+74
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+100.00
+</td>
+</tr>
+<tr>
+<td>
+NC_026450.1
+</td>
+<td>
+trnD-GUC
+</td>
+<td>
+1
+</td>
+<td>
+3
+</td>
+<td>
+direta
+</td>
+<td>
+identica
+</td>
+<td>
+74
+</td>
+<td>
+74
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+100.00
+</td>
+</tr>
+<tr>
+<td>
+NC_026450.1
+</td>
+<td>
+trnD-GUC
+</td>
+<td>
+2
+</td>
+<td>
+3
+</td>
+<td>
+direta
+</td>
+<td>
+identica
+</td>
+<td>
+74
+</td>
+<td>
+74
+</td>
+<td>
+0
+</td>
+<td>
+0
+</td>
+<td>
+100.00
+</td>
+</tr>
+<tr>
+<td>
+NC_026450.1
+</td>
+<td>
+trnG-UCC
+</td>
+<td>
+1
+</td>
+<td>
+2
+</td>
+<td>
+direta
+</td>
+<td>
+divergente
+</td>
+<td>
+70
+</td>
+<td>
+71
+</td>
+<td>
+12
+</td>
+<td>
+5
+</td>
+<td>
+76.71
+</td>
+</tr>
+<tr>
+<td>
+NC_026450.1
+</td>
+<td>
+trnY-GUA
+</td>
+<td>
+1
+</td>
+<td>
+2
+</td>
+<td>
+direta
+</td>
+<td>
+divergente
+</td>
+<td>
+84
+</td>
+<td>
+84
+</td>
+<td>
+5
+</td>
+<td>
+0
+</td>
+<td>
+94.05
+</td>
+</tr>
+</tbody>
+</table>
+<p>Em <em>A. heterophylla</em> aparecem três armadilhas de nome. O <em>rrn5</em> tem cópias de 120 e 121 pb com relação <code>borda</code>: é a mesma sequência, com um limite anotado uma base além. O gene anotado como <em>trnL-CAU</em> (produto tRNA-Leu) tem 70 de 73 posições idênticas (95,9%) ao <em>trnI-CAU</em> do mesmo registro e está em fitas opostas. Um tRNA de leucina com anticódon CAU não decodificaria nenhum códon de leucina (CAU pareia com AUG, ou com AUA após a modificação da base 34), então o rótulo não se sustenta: é a segunda cópia invertida do tRNA-CAU, a mesma duplicação que <code>KY404932.1</code> anota como <em>trnI-CAU</em> em duas cópias. Por fim, o <em>rbcL</em> está anotado como rbcl, e uma busca exata por nome simplesmente não o encontra. Com o rótulo do <em>trnL-CAU</em> corrigido, a contagem de tRNAs distintos de <em>A. heterophylla</em> cai de 33 para 32, contra 32 em <code>KY404932.1</code>. O inverso também acontece: as duas cópias de <em>trnG-UCC</em> de <em>A. heterophylla</em> são <code>divergente</code>, uma com íntron e outra sem, e podem ser genes distintos sob o mesmo nome.</p>
+<p>Regra prática: contagem por nome mistura biologia com prática de anotação. Para comparar registros de grupos diferentes, normalize os nomes (caixa, sinônimos) e, principalmente, compare sequências. Fica para a Sessão 2, por busca na sequência inteira: a segunda cópia de <em>trnR-UCU</em> de <code>KY404932.1</code> existe em <em>A. heterophylla</em> sem anotação? E as cópias de <em>trnD-GUC</em>, idênticas e na mesma fita nas duas espécies, estão dentro de repetições diretas maiores?</p>
+</section>
+<section id="complexidade-o-que-a-notação-o-não-diz" class="level3" data-number="2.11.4">
+<h3 data-number="2.11.4" class="anchored" data-anchor-id="complexidade-o-que-a-notação-o-não-diz"><span class="header-section-number">2.11.4</span> 6. Complexidade: o que a notação O não diz</h3>
+<p>A primeira medição deu a versão ingênua cerca de três vezes mais rápida (2,6 contra 7,6 ms por execução, com <span class="math inline">\(w = 1.000\)</span> e <span class="math inline">\(p = 250\)</span>). Não havia erro de medição; havia três lições.</p>
+<ol type="1">
+<li><strong>O custo da ingênua é <span class="math inline">\(O(n\,w/p)\)</span>, não <span class="math inline">\(O(n\,w)\)</span>.</strong> São <span class="math inline">\((n - w)/p + 1\)</span> janelas de <span class="math inline">\(w\)</span> leituras cada. Com <span class="math inline">\(p = 250\)</span>, <span class="math inline">\(w/p = 4\)</span>: cada base é lida só quatro vezes, e por <code>str.count</code>, um laço em C muito otimizado. O enunciado original escondia o passo.</li>
+<li><strong>A constante da versão <span class="math inline">\(O(n)\)</span> estava ruim.</strong> <code>np.isin</code> consumia mais da metade do tempo. Uma tabela de consulta de 256 posições (um acesso direto por byte, com <code>np.take</code>) faz o mesmo trabalho sem busca e passou a ser a implementação de <code>gc_janela</code>.</li>
+<li><strong>As duas funções não calculavam a mesma coisa.</strong> A ingênua dividia por <span class="math inline">\(w\)</span>, e não pelo número de bases válidas (errado quando há N), e os centros saíam deslocados meia base. Antes de cronometrar, prove que as duas devolvem o mesmo resultado. <code>gc_janela_ingenua</code> agora tem a mesma semântica e serve de oráculo nos testes.</li>
+</ol>
+<p>As duas versões atuais, medidas no plastoma inteiro pela máquina que renderizou esta nota (<code>cronometrar</code>: o menor de três lotes, cada lote com pelo menos 0,2 s):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>linhas <span class="op">=</span> []</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> passo <span class="kw">in</span> (<span class="dv">500</span>, <span class="dv">50</span>, <span class="dv">5</span>, <span class="dv">1</span>):</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    rapida <span class="op">=</span> gc_janela(record.seq, <span class="dv">1000</span>, passo)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    ingenua <span class="op">=</span> gc_janela_ingenua(record.seq, <span class="dv">1000</span>, passo)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> np.array_equal(rapida[<span class="dv">0</span>], ingenua[<span class="dv">0</span>])</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> np.allclose(rapida[<span class="dv">1</span>], ingenua[<span class="dv">1</span>], equal_nan<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    ms_o_n <span class="op">=</span> cronometrar(<span class="kw">lambda</span> p<span class="op">=</span>passo: gc_janela(record.seq, <span class="dv">1000</span>, p), <span class="dv">3</span>)</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    ms_ing <span class="op">=</span> cronometrar(<span class="kw">lambda</span> p<span class="op">=</span>passo: gc_janela_ingenua(record.seq, <span class="dv">1000</span>, p), <span class="dv">3</span>)</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    linhas.append(</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>        {</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>            <span class="st">"passo"</span>: passo,</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>            <span class="st">"w_sobre_p"</span>: <span class="dv">1000</span> <span class="op">//</span> passo,</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>            <span class="st">"janelas"</span>: <span class="bu">int</span>(rapida[<span class="dv">0</span>].size),</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>            <span class="st">"ms_o_n"</span>: <span class="bu">round</span>(ms_o_n, <span class="dv">2</span>),</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>            <span class="st">"ms_ingenua"</span>: <span class="bu">round</span>(ms_ing, <span class="dv">2</span>),</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>            <span class="st">"razao"</span>: <span class="bu">round</span>(ms_ing <span class="op">/</span> ms_o_n, <span class="dv">1</span>),</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>bench <span class="op">=</span> pd.DataFrame(linhas)</span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>tabela(bench)</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="dataframe table table-sm table-striped small">
+<thead>
+<tr>
+<th>
+passo
+</th>
+<th>
+w_sobre_p
+</th>
+<th>
+janelas
+</th>
+<th>
+ms_o_n
+</th>
+<th>
+ms_ingenua
+</th>
+<th>
+razao
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+500
+</td>
+<td>
+2
+</td>
+<td>
+290
+</td>
+<td>
+1.02
+</td>
+<td>
+3.29
+</td>
+<td>
+3.2
+</td>
+</tr>
+<tr>
+<td>
+50
+</td>
+<td>
+20
+</td>
+<td>
+2892
+</td>
+<td>
+1.03
+</td>
+<td>
+15.88
+</td>
+<td>
+15.4
+</td>
+</tr>
+<tr>
+<td>
+5
+</td>
+<td>
+200
+</td>
+<td>
+28912
+</td>
+<td>
+1.27
+</td>
+<td>
+102.44
+</td>
+<td>
+80.7
+</td>
+</tr>
+<tr>
+<td>
+1
+</td>
+<td>
+1000
+</td>
+<td>
+144559
+</td>
+<td>
+3.61
+</td>
+<td>
+874.09
+</td>
+<td>
+242.1
+</td>
+</tr>
+</tbody>
+</table>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>variacao_o_n <span class="op">=</span> _txt(bench[<span class="st">"ms_o_n"</span>].<span class="bu">max</span>() <span class="op">/</span> bench[<span class="st">"ms_o_n"</span>].<span class="bu">min</span>())</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>razao_final <span class="op">=</span> <span class="ss">f"</span><span class="sc">{</span>bench[<span class="st">'razao'</span>]<span class="sc">.</span>iloc[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.0f}</span><span class="ss">"</span></span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Quando <span class="math inline">\(w/p\)</span> vai de 2 a 1.000, o custo da versão <span class="math inline">\(O(n)\)</span> varia 3,5 vezes, enquanto o da ingênua cresce na proporção de <span class="math inline">\(w/p\)</span>; no passo 1, a versão <span class="math inline">\(O(n)\)</span> é 242 vezes mais rápida. A notação O descreve como o custo cresce, não quanto ele vale num ponto. Para comparar algoritmos, varie o parâmetro que governa a assintótica (aqui, <span class="math inline">\(w/p\)</span>) em vez de medir um único caso. A lição volta na Sessão 2, com k-mers.</p>
+</section>
 </section>
 <section id="referências" class="level2 unnumbered">
 <h2 class="unnumbered anchored" data-anchor-id="referências">Referências</h2>
